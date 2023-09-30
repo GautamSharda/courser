@@ -5,6 +5,7 @@ import React, { useState, useMemo, useRef } from 'react'
 import { Loader } from './Loader';
 import { Plan } from './Plan';
 import messagesHook from '@/helpers/useMessage';
+import Dropdown from './Dropdown';
 
 const TESTING = true;
 
@@ -20,8 +21,9 @@ export function Main() {
   const myRef = useRef(null);
   const version = useMemo(() => {
     if (!authToken) return 'authToken';
+    if (messages.length === 0) return 'firstQuestion';
     return 'chatWindow'
-  }, [authToken, file]);
+  }, [authToken, file.length, messages.length]);
 
 
   const scrollToBottom = () => {
@@ -33,37 +35,56 @@ export function Main() {
     }
   };
 
+  const setCanvasToken = async (token) => {
+    setIsLoading(true);
+    const response = await fetch(`${constants.url}/home`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({canvasToken: token}),
+    });
+    const res = await response.json();
+    setAuthToken(token);
+    setIsLoading(false);
+    const files = res.files ? res.files : [];
+    setFile(files);
+  }
+
   const sendNextQuestion = async (nextQuestion) => {
     scrollToBottom();
     const nxtValue = {"type": "human", "text": nextQuestion}
-    var requirerments = nextQuestion
-    for (let message of messages) {
-      if (message.type !== "AI") {
-        requirerments = requirerments + ', ' + message.text;
-      }
-    }
-    const scrollToBottomAfterTimeout = async () => {
-      await new Promise(resolve => setTimeout(resolve, 100));
-      scrollToBottom();
-    }
-    addMessage([{...nxtValue}], scrollToBottomAfterTimeout);
     const data = new FormData();
-    data.append('file', file);
-    data.append('requirerments', requirerments);
-    const response = await fetch(`${constants.url}/updateAgain`, {
+    data.append('prompt', nextQuestion);
+    data.append('canvasToken', authToken);
+    const response = await fetch(`${constants.url}/answer`, {
         method: 'POST',
         body: data,
     }); 
     const res = await response.json();
-    await new Promise(resolve => setTimeout(resolve, 100));
-    scrollToBottomAfterTimeout();
-    addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
+    // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
+    addMessage([{...nxtValue},{"type": "human", "text": "We got a response"}], scrollToBottom);
   }
 
-  function handleFileUpload(e) {
+  const handleFileUpload = async (e) => {
     const newFiles = e.target.files;
-    setFile([...file, ...newFiles]);
+    console.log(newFiles)
+    setIsLoading(true);
+    const data = new FormData();
+    data.append('files', newFiles);
+    data.append('canvasToken', authToken);
+    const response = await fetch(`${constants.url}/upload`, {
+        method: 'POST',
+        body: data,
+    });
+    const res = await response.json();
+    console.log(res);
+    setIsLoading(false);
+    const files = res.files ? res.files : [];
+    setFile(files);
   }
+
+
 
   if (isLoading) return <Loader />;
   
@@ -83,10 +104,30 @@ export function Main() {
           return (<Plan plan={plan} key={i}/>)
           })}
         </div>
-        <CommentForm sendNextQuestion={sendNextQuestion} file addFile={handleFileUpload}/>
+        <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload}/>
       </div>
     </div>
    )}
+
+   if (version === 'firstQuestion') {
+    return (
+      <div className="py-10 h-[90%]">
+      <header>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">Have any questions?</h1>  
+        </div>
+      </header>
+      <main className='h-full'>
+          <div className="mx-auto max-w-7xl h-full">
+            <div className="w-full h-[70%] flex flex-col items-center justify-center">
+              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload}/>
+            </div>
+          </div>
+      </main>
+    </div>
+  
+  );
+   }
   return (
     <div className="py-10 h-[90%]">
     <header>
@@ -98,7 +139,7 @@ export function Main() {
         <div className="mx-auto max-w-7xl h-full">
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm 
-            sendNextQuestion={setAuthToken} 
+            sendNextQuestion={setCanvasToken} 
             placeholder={"What is you ICON access token"}
             buttonText={"Submit"}
             />
@@ -106,7 +147,6 @@ export function Main() {
         </div>
     </main>
   </div>
-
 );
 }
 
@@ -123,20 +163,26 @@ function CommentForm({sendNextQuestion, placeholder, file, addFile}) {
               value={nextQuestion}
               onChange={(e) => setNextQuestion(e.target.value)}
               className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6"
-              placeholder={placeholder ? placeholder : "What questions do you have"}
+              placeholder={placeholder ? placeholder : "Ask us anything about UIowa..."}
             ></textarea>
-          </div>
-          
+          </div>          
           <div className={`flex ${file ? 'justify-between align-center' : 'justify-end'} pt-2`}>
             {file && (
-              <div className="flow-root">
-                <label htmlFor="fileInput" type="button" className="-m-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
-                  </svg>
-                  <input id="fileInput" type="file" className="sr-only" onChange={addFile}/>
-                </label>
-              </div> 
+              <div className="flex items-center space-x-5">
+                <div className="flow-root">
+                  <label htmlFor="fileInput" type="button" className="-m-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500">
+                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                    </svg>
+                    <input id="fileInput" type="file" className="sr-only" onChange={addFile} multiple/>
+                  </label>
+                </div> 
+                { file.length > 0 && (
+                <div className="flow-root">
+                  <Dropdown files={file} text={'Your Files'}/>
+                </div> 
+                )}
+              </div>
             )}           
             <button
               className="inline-flex items-center rounded-md bg-iowaYellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-iowaYellow-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-iowaYellow-600"

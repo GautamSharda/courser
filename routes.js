@@ -3,32 +3,49 @@ if (process.env.NODE_ENV !== "production") {
 }
 const express = require("express");
 const Routes = express.Router();
+const user = require("./models/user");
 
 
-Routes.get("/home", asyncMiddleware(async (req, res) => {
-    console.log('home');
-    res.json({home:  'home'})
-}));
-
-Routes.post('/upload', async (req, res) => {
-    try {
-        console.log('upload')
-        res.json({files:'files'});
-    } catch (error) {
-        console.error('Error processing file:', error);
-        res.status(500).send('Server error');
+Routes.post("/home", async (req, res) => {
+    const { canvasToken } = req.body;
+    let existingUser = await user.findOne({ canvasToken });
+    if (existingUser) {
+        res.json(existingUser);
+    } else {
+        let newUser = await user.create({ canvasToken });
+        res.json(newUser);
     }
 });
 
 
-Routes.post('/answer', async (req, res) => {
+Routes.post('/upload', async (req, res) => {
     try {
-        console.log('answer')
-        res.json({answer:'answer'});
-    } catch (error) {
+        const { canvasToken, files } = req.body;
+        // save file to uploads directory
+        // const fileNameNoDot = file.name.split('.')[0];
+        // const filePath = path.join(__dirname, 'uploads', fileNameNoDot + file.md5 + '.pdf');
+        // await file.mv(filePath);
+    
+        // const agent = new Agent(filePath, '', []);
+        // const plans = await agent.ready();
+        let foundUser = await user.findOne({ canvasToken });
+        res.json(foundUser);
+      } catch (error) {
         console.error('Error processing file:', error);
         res.status(500).send('Server error');
-    }
+      }
+});
+
+
+Routes.post('/answer', async (req, res) => {
+    const { canvasToken, prompt } = req.body;
+    console.log('we are hitting');
+    console.log(canvasToken);
+    console.log(prompt);
+    const foundUser = await user.findOne({ canvasToken });
+    foundUser.questions.push(prompt);
+    await foundUser.save();
+    res.json(foundUser);
 });
 
 Routes.use((err, req, res, next) => {
@@ -36,4 +53,4 @@ Routes.use((err, req, res, next) => {
     res.status(500).json({ error: `Internal error: ${err.message}` });
 });
 
-module.exports = routes;
+module.exports = Routes;

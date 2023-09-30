@@ -8,30 +8,30 @@ if (process.env.NODE_ENV !== "production") {
   const app = express();
   const bodyParser = require("body-parser");
   const mongoose = require("mongoose");
-  // const basicRoutes = require("./basicRoutes");
+  const Routes = require("./routes");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
   
-  // mongoose.set('strictQuery', true);
-  // mongoose.connect(process.env.MONGO_URI, {
-  //     useNewUrlParser: true,
-  //     useUnifiedTopology: true,
-  // });
+  mongoose.set('strictQuery', true);
+  mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+  });
   
-  // const db = mongoose.connection;
-  // db.on("error", (message) => {
-  //     console.log(message)
-  //     console.error("Error connecting to database");
-  // });
-  // db.once("open", () => {
-  //     console.log("✅ Database connected");
-  // });
+  const db = mongoose.connection;
+  db.on("error", (message) => {
+      console.log(message)
+      console.error("Error connecting to database");
+  });
+  db.once("open", () => {
+      console.log("✅ Database connected");
+  });
 
   app.use(fileUpload());
   app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
   app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser.netlify.app"]}));
-  // app.use("", basicRoutes);
+  app.use("", Routes);
   
   const server = http.createServer(app);
   
