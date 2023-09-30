@@ -22,6 +22,7 @@ Routes.post('/upload', async (req, res) => {
 
 
 Routes.post('/answer', async (req, res) => {
+    const { question } = req.body;
     try {
         console.log('answer')
         res.json({answer:'answer'});
