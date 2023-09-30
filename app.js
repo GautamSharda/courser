@@ -8,7 +8,7 @@ if (process.env.NODE_ENV !== "production") {
   const app = express();
   const bodyParser = require("body-parser");
   const mongoose = require("mongoose");
-  // const basicRoutes = require("./basicRoutes");
+  const Routes = require("./routes");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
   
@@ -31,10 +31,27 @@ if (process.env.NODE_ENV !== "production") {
   app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
   app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser.netlify.app"]}));
-  // app.use("", basicRoutes);
+  app.use("", Routes);
   
   const server = http.createServer(app);
   
+
+  // var myHeaders = new Headers();
+  // const url = 'canvas.instructure.com'
+  // myHeaders.append("Authorization", "Bearer 4298~OHGzN84mcQqz9LbO5VGjy0L0jVkx8jykipHX9UTMvIOIf3XQ9lAKdmjaK5z4VFwI");
+
+  // const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+
+  // var requestOptions = {
+  //   method: 'GET',
+  //   headers: myHeaders,
+  //   redirect: 'follow'
+  // };
+
+  // fetch(`https://canvas.instructure.com/api/v1/courses`, requestOptions)
+  //   .then(response => response.json())
+  //   .then(result => console.log(result))
+  //   .catch(error => console.log('error', error));
   
   let PORT = process.env.PORT;
   if (PORT == null || PORT == "") {
