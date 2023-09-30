@@ -67,7 +67,7 @@ export function Faqs() {
       <Image
         className="absolute left-1/2 top-0 max-w-none -translate-y-1/4 translate-x-[-30%]"
         src={backgroundImage}
-        alt=""
+        alt="asdf"
         width={1558}
         height={946}
         unoptimized
