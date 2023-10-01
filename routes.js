@@ -47,7 +47,7 @@ Routes.post('/answer', async (req, res) => {
 
     
     // Create Document object with essay
-    const documents = await new SimpleDirectoryReader("./data").loadData("./data");
+    const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
     console.log(documents);
     // Split text and create embeddings. Store them in a VectorStoreIndex
     const index = await VectorStoreIndex.fromDocuments([documents]);
