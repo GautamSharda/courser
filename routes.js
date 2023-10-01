@@ -6,19 +6,31 @@ const Routes = express.Router();
 const user = require("./models/user");
 const fs = require("fs/promises");
 const { Document, VectorStoreIndex, SimpleDirectoryReader } = require("llamaindex");
+const Canvas = require("./classes/Canvas");
+const { Configuration, OpenAIApi } = require("openai");
+const Proompter = require("./proompter");
+const dataProvider = require("./dataProvider");
 
 Routes.post("/home", async (req, res) => {
     res.json("newuser");
-    // const { canvasToken } = req.body;
-    // let existingUser = await user.findOne({ canvasToken });
-    // if (existingUser) {
-    //     res.json(existingUser);
-    // } else {
-    //     let newUser = await user.create({ canvasToken });
-    //     res.json(newUser);
-    // }
+    const { canvasToken } = req.body;
+    let existingUser = await user.findOne({ canvasToken });
+    if (existingUser) {
+        res.json(existingUser);
+    } else {
+        let newUser = await user.create({ canvasToken });
+        postCanvasData(newUser, canvasToken);
+        res.json(newUser);
+    }
 });
 
+/** 
+ * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
+ * Owner: Ilya 
+ */
+postCanvasData = async(newUser, canvasToken) => {
+    return;
+}
 
 Routes.post('/upload', async (req, res) => {
     try {
@@ -45,27 +57,57 @@ Routes.post('/answer', async (req, res) => {
     console.log(canvasToken);
     console.log(prompt);
 
-    
-    // Create Document object with essay
+    // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
+    const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
+
+    downloadPDFs(kMostRelevant);
+
     const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
     console.log(documents);
-    // Split text and create embeddings. Store them in a VectorStoreIndex
+
     const index = await VectorStoreIndex.fromDocuments(documents);
 
-    // Query the index
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
-        "What is the author's name?",
+        prompt,
     );
 
-    // Output response
     console.log(response.toString());    
 
     const foundUser = await user.findOne({ canvasToken });
-    // foundUser.questions.push(prompt);
-    // await foundUser.save();
+    foundUser.questions.push([prompt, response]);
+    await foundUser.save();
+
     res.json(foundUser);
 });
+
+getTopKRelevant = async (query, canvasToken, k) => {
+    const dataProvider = new DataProvider(canvasToken); 
+    const canvasFiles = await dataProvider.getCanvasFiles(); 
+    const personalFiles = await dataProvider.getPersonalFiles(); 
+    const UIFiles = await dataProvider.getUIFiles();
+
+    const allFiles = canvasFiles.concat(personalFiles).concat(UIFiles);
+
+    const proompter = new Proompter();
+    const topKIndices = proompter.pickTopKFiles(allFiles, query, k);
+    let topKFiles = [];
+    topKIndices.forEach(index => topKFiles.push(allFiles[index]));
+
+    return topKIndices;
+}
+
+downloadPDFs = async(files) => {
+
+    var requestOptions = {
+      method: 'GET',
+      redirect: 'follow'
+    };
+    
+    let response = await fetch("https://canvas.instructure.com/files/4298~23884269/download?download_frd=1&verifier=wcd5epObQRh2ISszfAfMSI0yBfZ2CzXr5wVhc0md", requestOptions);
+    // download PDFs from url
+    // override whatever is in ./data
+}
 
 Routes.use((err, req, res, next) => {
     console.log(err); // Log the stack trace of the error
