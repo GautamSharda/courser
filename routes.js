@@ -7,6 +7,9 @@ const user = require("./models/user");
 const fs = require("fs/promises");
 const { Document, VectorStoreIndex, SimpleDirectoryReader } = require("llamaindex");
 const Canvas = require("./classes/Canvas");
+const { Configuration, OpenAIApi } = require("openai");
+const Proompter = require("./proompter");
+const dataProvider = require("./dataProvider");
 
 Routes.post("/home", async (req, res) => {
     res.json("newuser");
@@ -26,7 +29,7 @@ Routes.post("/home", async (req, res) => {
  * Owner: Ilya 
  */
 postCanvasData = async(newUser, canvasToken) => {
-    const canvas = new Canvas(canvasToken);
+    return;
 }
 
 Routes.post('/upload', async (req, res) => {
@@ -54,7 +57,11 @@ Routes.post('/answer', async (req, res) => {
     console.log(canvasToken);
     console.log(prompt);
 
+    // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
+    const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
     
+    downloadPDFs();
+
     // Create Document object with essay
     const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
     console.log(documents);
@@ -71,10 +78,30 @@ Routes.post('/answer', async (req, res) => {
     console.log(response.toString());    
 
     const foundUser = await user.findOne({ canvasToken });
-    // foundUser.questions.push(prompt);
-    // await foundUser.save();
+    foundUser.questions.push([prompt, response]);
+    await foundUser.save();
+
     res.json(foundUser);
 });
+
+getTopKRelevant = async (query, canvasToken, k) => {
+    const dataProvider = new DataProvider(canvasToken); 
+    const canvasFiles = await dataProvider.getCanvasFiles(); 
+    const personalFiles = await dataProvider.getPersonalFiles(); 
+    const UIFiles = await dataProvider.getUIFiles();
+
+    const allFiles = canvasFiles.concat(personalFiles).concat(UIFiles);
+
+    const proompter = new Proompter();
+    const topKIndices = proompter.pickTopKFiles(allFiles, query, k);
+    let topKFiles = [];
+    topKIndices.forEach(index => topKFiles.push(allFiles[index]));
+    return topKIndices;
+}
+
+downloadPDFs = async(files) => {
+    // override whatever is in ./data
+}
 
 Routes.use((err, req, res, next) => {
     console.log(err); // Log the stack trace of the error
