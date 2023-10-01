@@ -11,6 +11,7 @@
   "author": "Patrick Foster",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.5.1",
     "body-parser": "^1.20.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -20,6 +21,7 @@
     "express-fileupload": "^1.4.0",
     "firebase": "^9.15.0",
     "firebase-admin": "^11.4.0",
+    "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.0",
     "llamaindex": "^0.0.29",
     "mongodb": "^6.1.0",
