@@ -44,17 +44,13 @@ Routes.post('/answer', async (req, res) => {
     console.log('we are hitting');
     console.log(canvasToken);
     console.log(prompt);
-    
-    const essay = await fs.readFile(
-        "data/test.txt",
-        "utf-8",
-      );
+
     
     // Create Document object with essay
-    const document = new Document({ text: essay });
-    
+    const documents = await new SimpleDirectoryReader("./data").loadData("./data");
+    console.log(documents);
     // Split text and create embeddings. Store them in a VectorStoreIndex
-    const index = await VectorStoreIndex.fromDocuments([document]);
+    const index = await VectorStoreIndex.fromDocuments([documents]);
 
     // Query the index
     const queryEngine = index.asQueryEngine();
