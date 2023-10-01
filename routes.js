@@ -6,19 +6,28 @@ const Routes = express.Router();
 const user = require("./models/user");
 const fs = require("fs/promises");
 const { Document, VectorStoreIndex, SimpleDirectoryReader } = require("llamaindex");
+const Canvas = require("./classes/Canvas");
 
 Routes.post("/home", async (req, res) => {
     res.json("newuser");
-    // const { canvasToken } = req.body;
-    // let existingUser = await user.findOne({ canvasToken });
-    // if (existingUser) {
-    //     res.json(existingUser);
-    // } else {
-    //     let newUser = await user.create({ canvasToken });
-    //     res.json(newUser);
-    // }
+    const { canvasToken } = req.body;
+    let existingUser = await user.findOne({ canvasToken });
+    if (existingUser) {
+        res.json(existingUser);
+    } else {
+        let newUser = await user.create({ canvasToken });
+        postCanvasData(newUser, canvasToken);
+        res.json(newUser);
+    }
 });
 
+/** 
+ * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
+ * Owner: Ilya 
+ */
+postCanvasData = async(newUser, canvasToken) => {
+    const canvas = new Canvas(canvasToken);
+}
 
 Routes.post('/upload', async (req, res) => {
     try {
@@ -50,12 +59,12 @@ Routes.post('/answer', async (req, res) => {
     const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
     console.log(documents);
     // Split text and create embeddings. Store them in a VectorStoreIndex
-    const index = await VectorStoreIndex.fromDocuments([documents]);
+    const index = await VectorStoreIndex.fromDocuments(documents);
 
     // Query the index
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
-        "What is the author's name?",
+        prompt,
     );
 
     // Output response
