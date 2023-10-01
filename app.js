@@ -11,6 +11,7 @@ if (process.env.NODE_ENV !== "production") {
   const Routes = require("./routes");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
+  const Canvas = require('./classes/Canvas');
   
   mongoose.set('strictQuery', true);
   mongoose.connect(process.env.MONGO_URI, {
@@ -53,6 +54,17 @@ if (process.env.NODE_ENV !== "production") {
   //   .then(result => console.log(result))
   //   .catch(error => console.log('error', error));
   
+  const call = async () => {
+    const canvas = new Canvas("4298~OHGzN84mcQqz9LbO5VGjy0L0jVkx8jykipHX9UTMvIOIf3XQ9lAKdmjaK5z4VFwI");
+    const courses = await canvas.findCourses();
+    const { id } = courses[courses.length - 1];
+    const specificCourse = await canvas.findFilesFromCourse(id);
+    const files = await canvas.writeFiles();
+    console.log(specificCourse);
+  }
+  call();
+
+
   let PORT = process.env.PORT;
   if (PORT == null || PORT == "") {
     PORT = 8000;
