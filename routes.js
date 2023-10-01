@@ -50,7 +50,7 @@ Routes.post('/answer', async (req, res) => {
     const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
     console.log(documents);
     // Split text and create embeddings. Store them in a VectorStoreIndex
-    const index = await VectorStoreIndex.fromDocuments([documents]);
+    const index = await VectorStoreIndex.fromDocuments(documents);
 
     // Query the index
     const queryEngine = index.asQueryEngine();
