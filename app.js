@@ -31,7 +31,7 @@ if (process.env.NODE_ENV !== "production") {
   app.use(fileUpload());
   app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
-  app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser.netlify.app"]}));
+  app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser.vercel.app/"]}));
   app.use("", Routes);
   
   const server = http.createServer(app);
@@ -54,15 +54,15 @@ if (process.env.NODE_ENV !== "production") {
   //   .then(result => console.log(result))
   //   .catch(error => console.log('error', error));
   
-  const call = async () => {
-    const canvas = new Canvas("4298~OHGzN84mcQqz9LbO5VGjy0L0jVkx8jykipHX9UTMvIOIf3XQ9lAKdmjaK5z4VFwI");
-    const courses = await canvas.findCourses();
-    const { id } = courses[courses.length - 1];
-    const specificCourse = await canvas.findFilesFromCourse(id);
-    const files = await canvas.writeFiles();
-    console.log(specificCourse);
-  }
-  call();
+  // const call = async () => {
+  //   const canvas = new Canvas("4298~OHGzN84mcQqz9LbO5VGjy0L0jVkx8jykipHX9UTMvIOIf3XQ9lAKdmjaK5z4VFwI");
+  //   const courses = await canvas.findCourses();
+  //   const { id } = courses[courses.length - 1];
+  //   const specificCourse = await canvas.findFilesFromCourse(id);
+  //   const files = await canvas.writeFiles();
+  //   console.log(specificCourse);
+  // }
+  // call();
 
 
   let PORT = process.env.PORT;
