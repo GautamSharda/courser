@@ -62,19 +62,16 @@ Routes.post('/answer', async (req, res) => {
     
     downloadPDFs();
 
-    // Create Document object with essay
     const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
     console.log(documents);
-    // Split text and create embeddings. Store them in a VectorStoreIndex
+
     const index = await VectorStoreIndex.fromDocuments(documents);
 
-    // Query the index
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
         prompt,
     );
 
-    // Output response
     console.log(response.toString());    
 
     const foundUser = await user.findOne({ canvasToken });
@@ -100,6 +97,7 @@ getTopKRelevant = async (query, canvasToken, k) => {
 }
 
 downloadPDFs = async(files) => {
+    // download PDFs from url
     // override whatever is in ./data
 }
 
