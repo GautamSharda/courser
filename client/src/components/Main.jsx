@@ -170,7 +170,7 @@ export function Main() {
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm
               sendNextQuestion={setCanvasToken}
-              placeholder={"What is your ICON access token"}
+              placeholder={"What is you ICON access token"}
               buttonText={"Submit"}
             />
           </div>
@@ -204,7 +204,7 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile }) {
               value={nextQuestion}
               onChange={(e) => setNextQuestion(e.target.value)}
               className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6"
-              placeholder={placeholder ? placeholder : "Ask us anything about UIowa..."}
+              placeholder={placeholder ? placeholder : `e.g. "what should I study for my networks exam?"`}
             ></textarea>
           </div>
           <div className={`flex ${file ? 'justify-between align-center' : 'justify-end'} pt-2`}>
