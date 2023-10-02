@@ -7,7 +7,7 @@ import { Plan } from './Plan';
 import messagesHook from '@/helpers/useMessage';
 import Dropdown from './Dropdown';
 
-const TESTING = window.location.href.includes('localhost');
+const TESTING = false;
 
 const constants = {
   url: TESTING ? "http://localhost:8000" : "https://courser-production.up.railway.app",
