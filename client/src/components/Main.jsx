@@ -7,9 +7,7 @@ import { Plan } from './Plan';
 import messagesHook from '@/helpers/useMessage';
 import Dropdown from './Dropdown';
 
-const TESTING = true;
-console.log('we are here');
-console.log(process.env);
+const TESTING = window.location.href.includes('localhost');
 
 const constants = {
   url: TESTING ? "http://localhost:8000" : "https://courser-production.up.railway.app",
@@ -25,7 +23,7 @@ export function Main() {
     if (!authToken) return 'authToken';
     if (messages.length === 0) return 'firstQuestion';
     return 'chatWindow'
-  }, [authToken, file.length, messages.length]);
+  }, [authToken, messages.length]);
 
 
   const scrollToBottom = () => {
