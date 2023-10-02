@@ -80,7 +80,8 @@
 
 
   .planContainer {
-    width: 600px;
+    width: 100%;
+    @media (min-width: 640px) { width: 600px; }
     max-width: 90vw;
     display: flex;
     flex-direction: column;
@@ -97,7 +98,8 @@
   }
 
   .humanAnswer{
-    width: 600px;
+    width: 100%;
+    @media (min-width: 640px) { width: 600px; }
     height: auto;
     padding: 10px 20px;
     border-radius: 25px 2px 2px 25px;

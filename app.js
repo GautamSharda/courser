@@ -11,7 +11,8 @@ if (process.env.NODE_ENV !== "production") {
   const Routes = require("./routes");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
-  const Canvas = require('./classes/Canvas');
+  const dataProvider = require('./dataProvider');
+  const { MongoClient, ServerApiVersion } = require('mongodb');
   
   mongoose.set('strictQuery', true);
   mongoose.connect(process.env.MONGO_URI, {
@@ -28,10 +29,19 @@ if (process.env.NODE_ENV !== "production") {
       console.log("✅ Database connected");
   });
 
+  const initPatrick = async () => {
+    const clientPatrick = new MongoClient(process.env.MONGO_URI_PATRICK, {serverApi: {version: ServerApiVersion.v1,deprecationErrors: true,}});
+    await clientPatrick.connect();
+    console.log("✅ Patrick's Database connected because partick is cool");
+    const clientPatrickDB = clientPatrick.db('test');
+    global.coursesCollections = clientPatrickDB.collection('courses');
+  }
+  initPatrick();
+
   app.use(fileUpload());
   app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
-  app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser.vercel.app/"]}));
+  app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser-beta.vercel.app"]}));
   app.use("", Routes);
   
   const server = http.createServer(app);
