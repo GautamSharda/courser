@@ -28,6 +28,8 @@ Routes.post("/home", async (req, res) => {
  * Owner: Ilya 
  */
 postCanvasData = async (newUser, canvasToken) => {
+    const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
+
     return;
 }
 

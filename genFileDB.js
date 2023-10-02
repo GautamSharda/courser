@@ -1,52 +1,64 @@
 if (process.env.NODE_ENV !== "production") {
     require("dotenv").config();
 }
+
 const { MongoClient } = require('mongodb');
-const { Document, VectorStoreIndex, SimpleDirectoryReader, PDFReader } = require("llamaindex");
-const fs = require('fs');
+const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI } = require("llamaindex");
 const axios = require('axios');
 const pdf = require('pdf-parse');
+const fs = require('fs');
 
 const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
 
 // MongoDB
-// ------------------------------------------------------------------------------------------------------------------------------
 const mongoClient = new MongoClient(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
 
-// Get summary and vector embeddings from url
+const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
+
+// Get summary and text from url of a PDF
 async function processFile(fileUrl, metadata) {
     // Download the PDF
+    let startTime = Date.now();
     let axiosResponse = await axios({
         url: fileUrl,
         method: 'GET',
         responseType: 'arraybuffer',  // Important
     });
-
-    // Create Document object with essay
-    let data = await pdf(axiosResponse.data);
-    let document = new Document({ text: data.text, metadata: metadata });
-    // Split text and create embeddings. Store them in a VectorStoreIndex
-    let startTime = Date.now();
-    const index = await VectorStoreIndex.fromDocuments([document]);
-
     let endTime = Date.now();
-    console.log("Indexing took " + (endTime - startTime) + " milliseconds");
+    // console.log("Requesting file took " + (endTime - startTime) + " milliseconds");
+
+    // Create Document object 
+    startTime = Date.now();
+    let data = await pdf(axiosResponse.data);
+    endTime = Date.now();
+    // console.log("Parsing PDF took " + (endTime - startTime) + " milliseconds");
+    let document = new Document({ text: data.text, metadata: metadata });
+
+    // Specify LLM model
+    const serviceContext = serviceContextFromDefaults({
+        llm: new OpenAI({ model: "gpt-3.5-turbo", temperature: 0 }),
+    });
+    
+    // Indexing 
+    startTime = Date.now();
+    const index = await SummaryIndex.fromDocuments([document], {serviceContext}); // LlamaIndex embedding
+    // let index = await fetchEmbedding(document.text); // Openai embedding
+    endTime = Date.now();
+    // console.log("Indexing took " + (endTime - startTime) + " milliseconds");
 
     // Query the index
     startTime = Date.now();
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
-        "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words.",
+        summaryPrompt,
     );
     endTime = Date.now();
-    console.log("Query took " + (endTime - startTime) + " milliseconds");
+    // console.log("Query took " + (endTime - startTime) + " milliseconds");
 
-    // Output response
-    console.log(response.toString());
-    return [response.toString(), index];
+    return [response.toString(), data.text];
 };
 
 // Download PDF
@@ -85,21 +97,17 @@ async function ensureDirExists(dirPath) {
     }
 }
 
-async function generateSummary(){
-    return "Summary"
-}
-
-
 // Populate DB with classes and files from Canvas API
 // ------------------------------------------------------------------------------------------------------------------------------
-(async () => {
+async function populateUserFiles(canvas_key){
     // Connect to MongoDB
     await mongoClient.connect()
+    const db = mongoClient.db('test');
+    const users = db.collection('users');
+
     // Step 1: Pull classes from Canvas API
     var myHeaders = new Headers();
-    myHeaders.append("Authorization", `Bearer ${process.env.CANVAS_KEY}`);
-    // myHeaders.append("Cookie", "_csrf_token=9mdmJEsRDaLhNcQUKe7WrwYgrIOEfMqHrh78kuxF7U6DU0lKfyRlw4BZjkNDvJnISGrYwekTnLDUbauj2CG%2BPg%3D%3D; _legacy_normandy_session=4DsBJp7NxmZnueOxcc1WmQ.tTg_K_Awd_jZBOzn7vVibtbs9IUdtTl3IQEOJo_J_C_VYDP2sMidDT3MwkSivWufaC3QcRj9dF_0xp3eOtKHhqoWrez0a9RTRYShjw1IcjbMiuGgsxhGdTuPz4xfesAz.zZrz8DUlLble7HRn8thDxV78MI0.ZRhnyw; canvas_session=4DsBJp7NxmZnueOxcc1WmQ.tTg_K_Awd_jZBOzn7vVibtbs9IUdtTl3IQEOJo_J_C_VYDP2sMidDT3MwkSivWufaC3QcRj9dF_0xp3eOtKHhqoWrez0a9RTRYShjw1IcjbMiuGgsxhGdTuPz4xfesAz.zZrz8DUlLble7HRn8thDxV78MI0.ZRhnyw; log_session_id=614a0e42b06d78d202b60f9cf5cb1d8d");
-
+    myHeaders.append("Authorization", `Bearer ${canvas_key}`);
     var requestOptions = {
         method: 'GET',
         headers: myHeaders,
@@ -112,72 +120,72 @@ async function generateSummary(){
 
     let classJson = JSON.parse(modifiedStr); 
 
-    fs.writeFileSync('./classJson.json', JSON.stringify(classJson));
-    // Print status code
     if (classDataResponse.status != 200){
-        console.log(`❌ Canvas API call unsuccessful: ${classDataResponse.status}-${classDataResponse.statusText}`);
+        console.log(`Canvas enrollment data call ❌ ${classDataResponse.status}-${classDataResponse.statusText}`);
         return;
     }
     else{
-        console.log(`✅ Canvas API call successful: 200-OK`);
+        console.log(`Canvas enrollment data call: 200 ✅`);
     }
     
     // Push classJson to user's DB because we're data collection sluts
-    const db = mongoClient.db('test');
-    const users = db.collection('users');
-
     let mongoPushRes = await users.updateOne(
-        { canvasToken: process.env.CANVAS_KEY }, // HARD CODED USER CANVAS KEY
+        { canvasToken: canvas_key },
         { $set: { classData: classJson } }
     );
-    console.log(`Result from classData push:`)
+    console.log(`Result from enrollment data push:`)
     console.log(mongoPushRes);
 
     // Iteratively request files for all classes
     for(let i=0; i<classJson.length; i++){
         try {
             if(classJson[i].course_code.includes(currentTerm)){ // Important to catch only current classes, not past ones
+                // Make get request
                 let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/files`
                 let fileDataResponse = await fetch(filesUrl, requestOptions);
                 let filesRes = JSON.parse(await fileDataResponse.text());
-            
-                // Print status code
                 if (fileDataResponse.status != 200){
                     continue;
                 } else{
                     console.log(`✅ Canvas API call successful: 200-OK`);
                 }
-
                 console.log("Pulling content for " + classJson[i].course_code)
 
-                // Pulls all files for the class and stores them
-                const classDir = `./userFiles/class_${classJson[i].id}`
-                await ensureDirExists(classDir)
+                // Enrich our metadata with summary and raw text
                 for(let i=0; i<filesRes.length; i++){
-                    console.log("Processing file: " + filesRes[i].filename)
-                    // let summary = await generateSummary(filesRes[i].url);
-                    //embedding here
-                    filesRes[i].summary = "summary";
-                    filesRes[i].course_code = classJson[i].course_code;
-                    filesRes[i].course_name = classJson[i].name;
-                    let index, summary  = await processFile(filesRes[i].url, {fileName: filesRes[i].display_name, created_at: filesRes[i].created_at});
-                    filesRes[i].summary = summary;
-                    filesRes[i].index = index;
+                    try {
+                        if (filesRes[i]['content-type']=="application/pdf"){ // Only process PDFs
+                            filesRes[i].course_code = classJson[i].course_code;
+                            filesRes[i].course_name = classJson[i].name;
+
+                            // This part most likely to fail
+                            let [summary, rawText] = await processFile(filesRes[i].url, {fileName: filesRes[i].display_name, created_at: filesRes[i].created_at});
+                            if (summary.length > 0 && rawText.length > 0) {
+                                console.log(filesRes[i].filename + " summary and raw text ✅")
+                                filesRes[i].summary = summary;
+                                filesRes[i].rawText = rawText;
+                            }else{
+                                console.log(filesRes[i].filename + " summary and raw text ❌")
+                            }
+                        }
+                    } catch (error) {
+                        console.log("❌Error❌ with processing file " + filesRes[i].filename)
+                    }
                 }
+
                 // Push file metadata to DB
                 let mongoPushRes = await users.updateOne(
-                    { canvasToken: process.env.CANVAS_KEY }, // HARD CODED USER CANVAS KEY
+                    { canvasToken: canvas_key }, 
                     { $set: { ['files.' + classJson[i].id]: filesRes } }
                 );
+                console.log(`Result from fileData push for ${classJson[i].course_code}:`)
                 console.log(mongoPushRes);
             }
         } catch (error) {
             // Some classes don't have files, so we catch the error and continue
-            console.log(error);
+            console.log("Error with pulling files for class" + classJson[i].id + `[${classJson[i].course_code}]`)
         }
-    }
+    }   
+};
 
-    
-})();
-
-
+populateUserFiles(process.env.CANVAS_KEY)
