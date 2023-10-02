@@ -3,60 +3,64 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const { MongoClient } = require('mongodb');
-const { Document, VectorStoreIndex, SummaryIndex, storageContextFromDefaults } = require("llamaindex");
+const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI } = require("llamaindex");
 const axios = require('axios');
 const pdf = require('pdf-parse');
+const fs = require('fs');
+
+// const { Configuration, OpenAIApi } = require("openai");
+// const configuration = new Configuration({
+//     apiKey: process.env.OPENAI_API_KEY
+// });
+// const openai = new OpenAIApi(configuration);
 
 const mongoClient = new MongoClient(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
 
-/**
- * TODO:
- * Push the index to the database, be able to retrieve it and query an llm with it
- * 
- */
-
+const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
 
 async function processFile(fileUrl, metadata) {
     // Download the PDF
+    let startTime = Date.now();
     let axiosResponse = await axios({
         url: fileUrl,
         method: 'GET',
         responseType: 'arraybuffer',  // Important
     });
-
-    // Create Document object with essay
-    let data = await pdf(axiosResponse.data);
-    let document = new Document({ text: data.text, metadata: metadata });
-    // Split text and create embeddings. Store them in a SummaryIndex
-    let startTime = Date.now();
-
-    const index = await SummaryIndex.fromDocuments([document]);
-
     let endTime = Date.now();
+    console.log("Requesting file took " + (endTime - startTime) + " milliseconds");
+
+    // Create Document object 
+    startTime = Date.now();
+    let data = await pdf(axiosResponse.data);
+    endTime = Date.now();
+    console.log("Parsing PDF took " + (endTime - startTime) + " milliseconds");
+    let document = new Document({ text: data.text, metadata: metadata });
+
+    // Specify LLM model
+    const serviceContext = serviceContextFromDefaults({
+        llm: new OpenAI({ model: "gpt-3.5-turbo", temperature: 0 }),
+    });
+    
+    // Indexing 
+    startTime = Date.now();
+    const index = await SummaryIndex.fromDocuments([document], {serviceContext}); // LlamaIndex embedding
+    // let index = await fetchEmbedding(document.text); // Openai embedding
+    endTime = Date.now();
     console.log("Indexing took " + (endTime - startTime) + " milliseconds");
 
     // Query the index
     startTime = Date.now();
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
-        "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words.",
+        summaryPrompt,
     );
     endTime = Date.now();
     console.log("Query took " + (endTime - startTime) + " milliseconds");
 
-    // Output response
-    console.log(response.toString());   
-    console.log(index);
-
-    // const db = mongoClient.db('test');
-    // const users = db.collection('users');
-    // let mongoPushRes = await users.updateOne(
-    //     { canvasToken: process.env.CANVAS_KEY }, // HARD CODED USER CANVAS KEY
-    //     { $set: { 'embedding': index } }
-    // );
+    return [response.toString(), data.text];
 };
 
 
