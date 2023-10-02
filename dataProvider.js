@@ -86,18 +86,15 @@ class dataProvider{
         return `data/${this.userToken}/${fileName}`;
     }
 
-    getUIFiles = async(query) => {
+    getCollegeFiles = async(query) => {
         const courseJSON = await this.queryMongoVectorDB(query);
         const courseJsons = courseJSON.map(this.courseJsonReducer);
         const configuration = new Configuration({apiKey: process.env.OPENAI_API_KEY});
         const openai = new OpenAIApi(configuration);
         const completion = await openai.createChatCompletion({model: 'gpt-3.5-turbo-16k',temperature: 0,messages: [{"role": "system","content": `You are a helpful AI assistant who helps students plan their schedules. You are given a list of courses (this includes their information) and a question from a student. Answer their question with the information provided`},{"role": "user","content": `Courses: ${JSON.stringify(courseJsons)}\n\n Question: ${query}`}]});
-        const remaining = completion.data.choices[0].message.content;
-        return this.writeFiles(remaining);
+        const response = completion.data.choices[0].message.content;
+        return response;
     }
-
-
-
 
     getPersonalFiles = async() => {
 

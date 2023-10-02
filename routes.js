@@ -67,40 +67,48 @@ Routes.post('/answer', async (req, res) => {
 
     res.json(foundUser);
 
-    // console.log('we are hitting');
-    // console.log(canvasToken);
-    // console.log(prompt);
+    console.log('we are hitting');
+    console.log(canvasToken);
+    console.log(prompt);
 
-    // // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    // const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
+    // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
+    const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
 
-    // downloadPDFs(kMostRelevant);
+    for (file in kMostRelevant){
+        const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
+        const fileText = file.rawText;
+        if (!fs.existsSync(`./data/${canvasToken}`)){
+            fs.mkdirSync(`./data/${canvasToken}`);
+        }
+        fs.writeFileSync(`./data/${canvasToken}/${fileName}`, fileText);
+    }
 
-    // const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
-    // console.log(documents);
+    const documents = await new SimpleDirectoryReader().loadData({directoryPath: `./data/${canvasToken}`});
+    console.log(documents);
 
-    // const index = await VectorStoreIndex.fromDocuments(documents);
+    const index = await VectorStoreIndex.fromDocuments(documents);
 
-    // const queryEngine = index.asQueryEngine();
-    // const response = await queryEngine.query(
-    //     prompt,
-    // );
+    const queryEngine = index.asQueryEngine();
+    const response = await queryEngine.query(
+        prompt,
+    );
 
-    // console.log(response.toString());    
+    console.log(response.toString());    
 
-    // const foundUser = await user.findOne({ canvasToken });
-    // foundUser.questions.push([prompt, response]);
-    // await foundUser.save();
+    const foundUser = await user.findOne({ canvasToken });
+    foundUser.questions.push([prompt, response]);
+    await foundUser.save();
 
 });
 
 getTopKRelevant = async (query, canvasToken, k) => {
     const dataProvider = new DataProvider(canvasToken);
     const canvasFiles = await dataProvider.getCanvasFiles();
-    const personalFiles = await dataProvider.getPersonalFiles();
-    const UIFiles = await dataProvider.getUIFiles();
+    // const personalFiles = await dataProvider.getPersonalFiles();
+    // const collegeFiles = await dataProvider.getCollegeFiles();
 
-    const allFiles = canvasFiles.concat(personalFiles).concat(UIFiles);
+    const allFiles = canvasFiles;
+    // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
 
     const proompter = new Proompter();
     const topKIndices = proompter.pickTopKFiles(allFiles, query, k);
@@ -110,25 +118,6 @@ getTopKRelevant = async (query, canvasToken, k) => {
     return topKIndices;
 }
 
-
-Routes.post('/test', async (req, res) => {
-    downloadPDFs(req.body.files);
-});
-
-downloadPDFs = async(files) => {
-    console.log(files);
-    files.forEach(file = async() => {
-    var requestOptions = {
-        method: 'GET',
-        redirect: 'follow'
-    };
-
-    let response = await fetch(file.url, requestOptions);
-    // download PDFs from url
-    // override whatever is in ./data
-    })
-
-}
 
 Routes.use((err, req, res, next) => {
     console.log(err); // Log the stack trace of the error
