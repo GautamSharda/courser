@@ -161,7 +161,7 @@ export function Main() {
 function CommentForm({ sendNextQuestion, placeholder, file, addFile }) {
   const [nextQuestion, setNextQuestion] = useState('');
   return (
-    <div className="flex items-start space-x-4 w-full sm:w-[600px]">
+    <div className="flex items-start space-x-4 sm:w-[85%] md:w-[400px] lg:w-[600px]">
       <div className="min-w-0 flex-1">
         <div>
           <div className="border-b border-gray-200 focus-within:border-iowaYellow-600">
