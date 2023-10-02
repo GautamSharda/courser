@@ -4,3 +4,7 @@ package-lock.json
 dump.txt
 uploads/
 data/
+.pdf
+.pptx
+.png
+.hs
