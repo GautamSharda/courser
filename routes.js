@@ -12,6 +12,7 @@ const Proompter = require("./proompter");
 const dataProvider = require("./dataProvider");
 
 Routes.post("/home", async (req, res) => {
+    res.json("newuser");
     const { canvasToken } = req.body;
     let existingUser = await user.findOne({ canvasToken });
     if (existingUser) {
@@ -34,15 +35,11 @@ postCanvasData = async(newUser, canvasToken) => {
 Routes.post('/upload', async (req, res) => {
     try {
         const { canvasToken, files } = req.body;
-        // files doesn't seem right
-        for (const file of files) {
-            // save file to uploads directory
-            console.log(file);
-            const fileNameNoDot = file.name.split('.')[0];
-            const filePath = path.join(__dirname, 'userFiles', fileNameNoDot + file.md5 + '.pdf');
-            await file.mv(filePath);
-        }
-            
+        // save file to uploads directory
+        // const fileNameNoDot = file.name.split('.')[0];
+        // const filePath = path.join(__dirname, 'uploads', fileNameNoDot + file.md5 + '.pdf');
+        // await file.mv(filePath);
+    
         // const agent = new Agent(filePath, '', []);
         // const plans = await agent.ready();
         let foundUser = await user.findOne({ canvasToken });
@@ -56,42 +53,32 @@ Routes.post('/upload', async (req, res) => {
 
 Routes.post('/answer', async (req, res) => {
     const { canvasToken, prompt } = req.body;
-
     console.log('we are hitting');
     console.log(canvasToken);
     console.log(prompt);
 
+    // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
+    const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
+
+    downloadPDFs(kMostRelevant);
+
+    const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
+    console.log(documents);
+
+    const index = await VectorStoreIndex.fromDocuments(documents);
+
+    const queryEngine = index.asQueryEngine();
+    const response = await queryEngine.query(
+        prompt,
+    );
+
+    console.log(response.toString());    
+
     const foundUser = await user.findOne({ canvasToken });
-    foundUser.questions.push(prompt);
+    foundUser.questions.push([prompt, response]);
     await foundUser.save();
 
     res.json(foundUser);
-
-    // console.log('we are hitting');
-    // console.log(canvasToken);
-    // console.log(prompt);
-
-    // // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    // const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
-
-    // downloadPDFs(kMostRelevant);
-
-    // const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
-    // console.log(documents);
-
-    // const index = await VectorStoreIndex.fromDocuments(documents);
-
-    // const queryEngine = index.asQueryEngine();
-    // const response = await queryEngine.query(
-    //     prompt,
-    // );
-
-    // console.log(response.toString());    
-
-    // const foundUser = await user.findOne({ canvasToken });
-    // foundUser.questions.push([prompt, response]);
-    // await foundUser.save();
-
 });
 
 getTopKRelevant = async (query, canvasToken, k) => {
