@@ -63,7 +63,7 @@ export function Main() {
     }); 
     const res = await response.json();
     // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
-    addMessage([{...nxtValue},{"type": "human", "text": "We got a response"}], scrollToBottom);
+    addMessage([{...nxtValue},{"type": "human", "text": "We received your question. Thank you kind beta tester!"}], scrollToBottom);
   }
 
   const handleFileUpload = async (e) => {
@@ -114,13 +114,14 @@ export function Main() {
       <div className="py-10 h-[90%]">
       <header>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">Have any questions?</h1>  
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">What are you wondering?</h1>  
         </div>
       </header>
       <main className='h-full'>
           <div className="mx-auto max-w-7xl h-full">
             <div className="w-full h-[70%] flex flex-col items-center justify-center">
-              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload}/>
+              {/*file={file} addFile={handleFileUpload}*/}
+              <CommentForm sendNextQuestion={sendNextQuestion} />
             </div>
           </div>
       </main>
@@ -140,7 +141,7 @@ export function Main() {
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm 
             sendNextQuestion={setCanvasToken} 
-            placeholder={"What is you ICON access token"}
+            placeholder={"Enter your first name"}
             buttonText={"Submit"}
             />
           </div>
@@ -163,7 +164,7 @@ function CommentForm({sendNextQuestion, placeholder, file, addFile}) {
               value={nextQuestion}
               onChange={(e) => setNextQuestion(e.target.value)}
               className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6"
-              placeholder={placeholder ? placeholder : "Ask us anything about UIowa..."}
+              placeholder={placeholder ? placeholder : `e.g. "what should I study for my networks exam?"`}
             ></textarea>
           </div>          
           <div className={`flex ${file ? 'justify-between align-center' : 'justify-end'} pt-2`}>
@@ -191,7 +192,7 @@ function CommentForm({sendNextQuestion, placeholder, file, addFile}) {
                 setNextQuestion('');
               }}
             >
-              Sumbit
+              Submit
             </button>
           </div>
         </div>
