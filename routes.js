@@ -57,7 +57,7 @@ Routes.post('/answer', async (req, res) => {
     console.log(canvasToken);
     console.log(prompt);
 
-    // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
+    // find K most relevant files from  user.personalData, user.canvasData, combine corresponding vectors, query
     const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
 
     downloadPDFs(kMostRelevant);
@@ -97,16 +97,24 @@ getTopKRelevant = async (query, canvasToken, k) => {
     return topKIndices;
 }
 
-downloadPDFs = async(files) => {
 
+Routes.post('/test', async (req, res) => {
+    downloadPDFs(req.body.files);
+});
+
+downloadPDFs = async(files) => {
+    console.log(files);
+    files.forEach(file = async() => {
     var requestOptions = {
       method: 'GET',
       redirect: 'follow'
     };
-    
-    let response = await fetch("https://canvas.instructure.com/files/4298~23884269/download?download_frd=1&verifier=wcd5epObQRh2ISszfAfMSI0yBfZ2CzXr5wVhc0md", requestOptions);
+
+    let response = await fetch(file.url, requestOptions);
     // download PDFs from url
     // override whatever is in ./data
+    })
+
 }
 
 Routes.use((err, req, res, next) => {
