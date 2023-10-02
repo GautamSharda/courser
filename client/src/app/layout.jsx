@@ -7,10 +7,10 @@ import '@/styles/tailwind.css'
 export const metadata = {
   title: {
     template: '%s - Courser',
-    default: 'Courser - Class Registration Made Easy',
+    default: 'Courser - An AI assistant for college students',
   },
   description:
-    'Making course registration simple',
+    'Become a 10x student',
 }
 
 const inter = Inter({
