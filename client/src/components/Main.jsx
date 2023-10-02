@@ -6,11 +6,16 @@ import { Loader } from './Loader';
 import { Plan } from './Plan';
 import messagesHook from '@/helpers/useMessage';
 import Dropdown from './Dropdown';
-
-const TESTING = false;
+let isLocal = false;
+try {
+  isLocal = window.location.href.includes('localhost');
+} catch (e) {}
+// const TESTING = false;
+console.log('isLocal');
+console.log(isLocal);
 
 const constants = {
-  url: TESTING ? "http://localhost:8000" : "https://courser-production.up.railway.app",
+  url: isLocal ? "http://localhost:8000" : "https://courser-production.up.railway.app",
 };
 
 export function Main() {
