@@ -9,7 +9,7 @@ const { Document, VectorStoreIndex, SimpleDirectoryReader } = require("llamainde
 const Canvas = require("./classes/Canvas");
 const { Configuration, OpenAIApi } = require("openai");
 const Proompter = require("./proompter");
-const dataProvider = require("./dataProvider");
+const DataProvider = require("./dataprovider");
 
 Routes.post("/home", async (req, res) => {
     const { canvasToken } = req.body;
@@ -18,7 +18,7 @@ Routes.post("/home", async (req, res) => {
         res.json(existingUser);
     } else {
         let newUser = await user.create({ canvasToken });
-        postCanvasData(newUser, canvasToken);
+        postCanvasData(canvasToken);
         res.json(newUser);
     }
 });
@@ -27,7 +27,7 @@ Routes.post("/home", async (req, res) => {
  * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
  * Owner: Ilya 
  */
-postCanvasData = async (newUser, canvasToken) => {
+postCanvasData = async (canvasToken) => {
     const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
 
     return;
@@ -63,10 +63,6 @@ Routes.post('/answer', async (req, res) => {
     console.log(canvasToken);
     console.log(prompt);
 
-    const foundUser = await user.findOne({ canvasToken });
-    foundUser.questions.push(prompt);
-    await foundUser.save();
-
     res.json(foundUser);
 
     console.log('we are hitting');
@@ -78,11 +74,13 @@ Routes.post('/answer', async (req, res) => {
 
     for (file in kMostRelevant){
         const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
-        const fileText = file.rawText;
-        if (!fs.existsSync(`./data/${canvasToken}`)){
-            fs.mkdirSync(`./data/${canvasToken}`);
+        if (file.rawText){
+            const fileText = file.rawText;
+            if (!fs.existsSync(`./data/${canvasToken}`)){
+                fs.mkdirSync(`./data/${canvasToken}`);
+            }
+            fs.writeFileSync(`./data/${canvasToken}/${fileName}`, fileText);
         }
-        fs.writeFileSync(`./data/${canvasToken}/${fileName}`, fileText);
     }
 
     const documents = await new SimpleDirectoryReader().loadData({directoryPath: `./data/${canvasToken}`});
@@ -95,10 +93,12 @@ Routes.post('/answer', async (req, res) => {
         prompt,
     );
 
-    console.log(response.toString());    
+    const answer = response.toString();
+    console.log(answer);    
 
     const foundUser = await user.findOne({ canvasToken });
-    foundUser.questions.push([prompt, response]);
+    foundUser.questions.push(prompt);
+    foundUser.responses.push(answer);
     await foundUser.save();
 
 });
@@ -106,8 +106,8 @@ Routes.post('/answer', async (req, res) => {
 getTopKRelevant = async (query, canvasToken, k) => {
     const dataProvider = new DataProvider(canvasToken);
     const canvasFiles = await dataProvider.getCanvasFiles();
-    // const personalFiles = await dataProvider.getPersonalFiles();
-    // const collegeFiles = await dataProvider.getCollegeFiles();
+    const personalFiles = await dataProvider.getPersonalFiles();
+    const collegeFiles = await dataProvider.getCollegeFiles();
 
     const allFiles = canvasFiles;
     // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
@@ -117,7 +117,7 @@ getTopKRelevant = async (query, canvasToken, k) => {
     let topKFiles = [];
     topKIndices.forEach(index => topKFiles.push(allFiles[index]));
 
-    return topKIndices;
+    return topKFiles;
 }
 
 

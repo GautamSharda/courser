@@ -2,7 +2,7 @@
 const fs = require('fs');
 const { Configuration, OpenAIApi } = require("openai");
 
-class dataProvider{
+class DataProvider{
     constructor(canvasToken) {
         this.userToken = canvasToken;
     }
@@ -97,9 +97,9 @@ class dataProvider{
     }
 
     getPersonalFiles = async() => {
-
+      return {};
     }
 
 }
 
-module.exports = dataProvider;
+module.exports = DataProvider;
