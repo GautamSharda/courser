@@ -1,14 +1,11 @@
 if (process.env.NODE_ENV !== "production") {
     require("dotenv").config();
 }
-
 const { MongoClient } = require('mongodb');
 const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI } = require("llamaindex");
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-
-const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
 
 // MongoDB
 const mongoClient = new MongoClient(process.env.MONGO_URI, {
@@ -16,9 +13,15 @@ const mongoClient = new MongoClient(process.env.MONGO_URI, {
     useUnifiedTopology: true,
 });
 
+const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
 const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
 
-// Get summary and text from url of a PDF
+/**
+ * 
+ * @param {*} fileUrl this is the URL of the file on the web
+ * @param {*} metadata this is the metadata of the file
+ * @returns a promise that resolves to an array of [summary, rawText]
+ */
 async function processFile(fileUrl, metadata) {
     // Download the PDF
     let startTime = Date.now();
@@ -32,7 +35,7 @@ async function processFile(fileUrl, metadata) {
 
     // Create Document object 
     startTime = Date.now();
-    let data = await pdf(axiosResponse.data);
+    let data = await pdf(axiosResponse.data); // I hate this shit it prints warnings every time
     endTime = Date.now();
     // console.log("Parsing PDF took " + (endTime - startTime) + " milliseconds");
     let document = new Document({ text: data.text, metadata: metadata });
@@ -61,45 +64,40 @@ async function processFile(fileUrl, metadata) {
     return [response.toString(), data.text];
 };
 
-// Download PDF
-async function downloadPdf(url, outputPath) {
-    try {
-        const response = await axios({
-            method: 'get',
-            url: url,
-            responseType: 'stream'
-        });
+/**
+ * 
+ * @param {*} filesBatch this is an array of files
+ * @param {*} course this is the course object
+ * @returns a promise that resolves to an array of files enriched with summary and raw text
+ */
+async function processFilesBatch(filesBatch, course) {
+    return Promise.all(filesBatch.map(async file => {
+        if (file['content-type'] == "application/pdf") { // Only process PDFs
+            file.course_code = course.course_code;
+            file.course_name = course.name;
 
-        const writer = fs.createWriteStream(outputPath);
-
-        response.data.pipe(writer);
-
-        return new Promise((resolve, reject) => {
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-        });
-    } catch (error) {
-        console.error('Error downloading the file:', error);
-    }
-}
-
-// Make directory if it doesn't exist
-async function ensureDirExists(dirPath) {
-    try {
-        await fs.promises.mkdir(dirPath, { recursive: true });
-        console.log('Directory ensured:', dirPath);
-    } catch (error) {
-        if (error.code === 'EEXIST') {
-            // Directory already exists, no action needed
-        } else {
-            console.error('Error creating directory:', error);
+            try {
+                const [summary, rawText] = await processFile(file.url, { fileName: file.display_name, created_at: file.created_at });
+                if (summary.length > 0 && rawText.length > 0) {
+                    console.log(file.filename + " summary and raw text ✅")
+                    file.summary = summary;
+                    file.rawText = rawText;
+                } else {
+                    console.log(file.filename + " summary and raw text ❌")
+                }
+            } catch (error) {
+                console.log("❌Error❌ with processing file " + file.filename);
+            }
         }
-    }
+        return file;
+    }));
 }
+
 
 // Populate DB with classes and files from Canvas API
 // ------------------------------------------------------------------------------------------------------------------------------
 async function populateUserFiles(canvas_key){
+    let startTime = Date.now();
     // Connect to MongoDB
     await mongoClient.connect()
     const db = mongoClient.db('test');
@@ -149,9 +147,10 @@ async function populateUserFiles(canvas_key){
                 } else{
                     console.log(`✅ Canvas API call successful: 200-OK`);
                 }
-                console.log("Pulling content for " + classJson[i].course_code)
+                console.log("Pulling content for " + classJson[i].course_code);
 
                 // Enrich our metadata with summary and raw text
+                /*
                 for(let i=0; i<filesRes.length; i++){
                     try {
                         if (filesRes[i]['content-type']=="application/pdf"){ // Only process PDFs
@@ -171,12 +170,21 @@ async function populateUserFiles(canvas_key){
                     } catch (error) {
                         console.log("❌Error❌ with processing file " + filesRes[i].filename)
                     }
+                } */
+
+                // MULTI THREADING
+                const BATCH_SIZE = 5;
+                let enrichedFiles = [];
+                for (let j = 0; j < filesRes.length; j += BATCH_SIZE) {
+                    const filesBatch = filesRes.slice(j, j + BATCH_SIZE);
+                    await processFilesBatch(filesBatch, classJson[i]);
+                    enrichedFiles = enrichedFiles.concat(filesBatch);
                 }
 
                 // Push file metadata to DB
                 let mongoPushRes = await users.updateOne(
                     { canvasToken: canvas_key }, 
-                    { $set: { ['files.' + classJson[i].id]: filesRes } }
+                    { $set: { ['files.' + classJson[i].id]: enrichedFiles } }
                 );
                 console.log(`Result from fileData push for ${classJson[i].course_code}:`)
                 console.log(mongoPushRes);
@@ -185,7 +193,9 @@ async function populateUserFiles(canvas_key){
             // Some classes don't have files, so we catch the error and continue
             console.log("Error with pulling files for class" + classJson[i].id + `[${classJson[i].course_code}]`)
         }
-    }   
+    }
+    let endTime = Date.now();
+    console.log("Total time: " + (endTime - startTime) + " milliseconds");
 };
 
 populateUserFiles(process.env.CANVAS_KEY)
