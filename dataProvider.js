@@ -1,14 +1,33 @@
 // A high level class to orchestrate all our data queries across all our sources
 const fs = require('fs');
 const { Configuration, OpenAIApi } = require("openai");
+const { MongoClient } = require('mongodb');
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
+// MongoDB
+const mongoClient = new MongoClient(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 class dataProvider{
     constructor(canvasToken) {
-        this.userToken = canvasToken;
+      this.userToken = canvasToken;
     }
 
-    getCanvasFiles = async () => {
+    getCanvasFileMetadata = async () => {
+      await mongoClient.connect()
+      const db = mongoClient.db('test');
+      const users = db.collection('users');
 
+      const user = await users.findOne({ canvasToken: this.userToken });
+
+      let combinedArray = [].concat(...Object.values(user.files));
+      combinedArray = combinedArray.map(({ display_name, created_at, course_name, summary }) => ({ display_name, created_at, course_name,summary }));
+
+      return(combinedArray)
     }
 
 
