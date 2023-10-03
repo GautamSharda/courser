@@ -5,7 +5,7 @@ const express = require("express");
 const Routes = express.Router();
 const user = require("./models/user");
 const fs = require("fs/promises");
-const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI } = require("llamaindex");
+const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI, SimpleDirectoryReader } = require("llamaindex");
 const Canvas = require("./classes/Canvas");
 const { Configuration, OpenAIApi } = require("openai");
 const Proompter = require("./proompter");
@@ -13,17 +13,23 @@ const DataProvider = require("./dataprovider");
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
+const fsNormal = require('fs');
 
 Routes.post("/home", async (req, res) => {
     const { canvasToken } = req.body;
+    console.log(canvasToken)
     let existingUser = await user.findOne({ canvasToken });
-    if (existingUser) {
-        res.json(existingUser);
-    } else {
+    console.log(canvasToken)
+    // if (existingUser) {
+    //     if (existingUser.files.length===0){
+    //         postCanvasData(existingUser, canvasToken);
+    //     }
+    //     res.json(existingUser);
+    // } else {
         let newUser = await user.create({ canvasToken });
         postCanvasData(newUser, canvasToken);
         res.json(newUser);
-    }
+    // }
 });
 
 
@@ -109,7 +115,8 @@ async function processFilesBatch(filesBatch, course) {
  * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
  * Owner: Ilya 
  */
-postCanvasData = async (canvasToken) => {
+postCanvasData = async (existingUser,canvasToken) => {
+    // fsNormal.writeFileSync("./canvastoken.txt", canvasToken)
     const mongoClient = new MongoClient(process.env.MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
@@ -122,6 +129,12 @@ postCanvasData = async (canvasToken) => {
     await mongoClient.connect()
     const db = mongoClient.db('test');
     const users = db.collection('users');
+
+    // Clear existing files, since were repulling them
+    await users.updateOne(
+        { canvasToken: canvasToken },
+        { $set: { files: [] } }
+    );
 
     // Step 1: Pull classes from Canvas API
     var myHeaders = new Headers();
@@ -169,6 +182,12 @@ postCanvasData = async (canvasToken) => {
                 }
                 console.log("Pulling content for " + classJson[i].course_code);
 
+                // Add classId to each obj
+                filesRes = filesRes.map(file => ({
+                    ...file,
+                    classID: classJson[i].id
+                }));
+
                 // Enrich our metadata with summary and raw text 
                 // MULTI THREADING
                 const BATCH_SIZE = 5;
@@ -182,7 +201,7 @@ postCanvasData = async (canvasToken) => {
                 // Push file metadata to DB
                 let mongoPushRes = await users.updateOne(
                     { canvasToken: canvasToken }, 
-                    { $set: { ['files.' + classJson[i].id]: enrichedFiles } }
+                    { $push: { files: { $each: enrichedFiles } } }
                 );
                 console.log(`Result from fileData push for ${classJson[i].course_code}:`)
                 console.log(mongoPushRes);
@@ -203,7 +222,7 @@ Routes.post('/upload', async (req, res) => {
         // files doesn't seem right
         for (const file of files) {
             // save file to uploads directory
-            console.log(file);
+            // console.log(file);
             const fileNameNoDot = file.name.split('.')[0];
             const filePath = path.join(__dirname, 'userFiles', fileNameNoDot + file.md5 + '.pdf');
             await file.mv(filePath);
@@ -224,33 +243,48 @@ Routes.post('/answer', async (req, res) => {
     const { canvasToken, prompt } = req.body;
 
     console.log('we are hitting');
-    console.log(canvasToken);
-    console.log(prompt);
-
-    res.json(foundUser);
-
-    console.log('we are hitting');
-    console.log(canvasToken);
-    console.log(prompt);
+    // console.log(canvasToken);
+    // console.log(prompt);
 
     // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
+    const kMostRelevant = await getTopKRelevant(prompt, canvasToken, 3); // Json array of file metadata
+    // for (file in kMostRelevant){
+    //     const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
+    //     if (file.rawText){
+    //         const fileText = file.rawText;
+    //         if (!fs.existsSync(`./data/${canvasToken}`)){
+    //             fs.mkdirSync(`./data/${canvasToken}`);
+    //         }
+    //         fs.writeFileSync(`./data/${canvasToken}/${fileName}`, fileText);
+    //     }
+    // }
 
-    for (file in kMostRelevant){
-        const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
-        if (file.rawText){
-            const fileText = file.rawText;
-            if (!fs.existsSync(`./data/${canvasToken}`)){
-                fs.mkdirSync(`./data/${canvasToken}`);
-            }
-            fs.writeFileSync(`./data/${canvasToken}/${fileName}`, fileText);
-        }
+    // let documents = []
+    // for (file in kMostRelevant){
+    //     let fileMetaData = file;
+    //     delete fileMetaData.rawText;
+    //     documents.append(new Document({text:file.rawText, metadata: fileMetaData}))
+    // }
+    // console.log(documents);
+
+    let documents = [];
+    console.log("kMostRelevantFiles", kMostRelevant);
+    for (let i = 0; i < kMostRelevant.length; i ++){
+        const file = kMostRelevant[i];
+        const dp = new DataProvider(canvasToken);
+        // console.log(file.id);
+        let rawText = await dp.fetchRawTextOfFile(file.id); // ??
+        console.log(rawText);
+        documents.push(new Document({text:rawText}))
     }
 
-    const documents = await new SimpleDirectoryReader().loadData({directoryPath: `./data/${canvasToken}`});
-    console.log(documents);
+    // Specify LLM model
+    const serviceContext = serviceContextFromDefaults({
+        llm: new OpenAI({ model: "gpt-4", temperature: 0 }),
+    });
 
-    const index = await VectorStoreIndex.fromDocuments(documents);
+    // console.log(documents);
+    const index = await SummaryIndex.fromDocuments(documents, {serviceContext});
 
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
@@ -258,29 +292,31 @@ Routes.post('/answer', async (req, res) => {
     );
 
     const answer = response.toString();
-    console.log(answer);    
+    console.log(`the final answer: ${answer}`);    
 
     const foundUser = await user.findOne({ canvasToken });
     foundUser.questions.push(prompt);
     foundUser.responses.push(answer);
     await foundUser.save();
 
+    res.json(foundUser);
 });
 
 getTopKRelevant = async (query, canvasToken, k) => {
     const dataProvider = new DataProvider(canvasToken);
-    const canvasFiles = await dataProvider.getCanvasFiles();
+    const canvasFiles = await dataProvider.getCanvasFileMetadata(false);
+    
+    // console.log('canvasFiles', canvasFiles);
     const personalFiles = await dataProvider.getPersonalFiles();
-    const collegeFiles = await dataProvider.getCollegeFiles();
+    // const collegeFiles = await dataProvider.getCollegeFiles();
 
     const allFiles = canvasFiles;
     // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
 
     const proompter = new Proompter();
-    const topKIndices = proompter.pickTopKFiles(allFiles, query, k);
+    const topKIndices = await proompter.pickTopKFiles(allFiles, query, k);
     let topKFiles = [];
     topKIndices.forEach(index => topKFiles.push(allFiles[index]));
-
     return topKFiles;
 }
 

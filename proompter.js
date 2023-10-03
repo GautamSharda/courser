@@ -8,15 +8,17 @@ class Proompter {
       }
 
       pickTopKFiles = async (files, query, k) => {
-            const prompt = `fileObjects=${files}, questionString=${query}, k=${k}`
+            console.log('hit picker');
+            const prompt = `fileObjects=${JSON.stringify(files)}, questionString=${query}, k=${k}`;
+            topKInstructions.push({"role" : "user", "content": prompt});
             const completion = await this.openai.createChatCompletion({
-                  model: 'gpt-3.5-turbo-16k',
+                  model: 'gpt-4',
                   temperature: 0,
-                  messages: topKInstructions.push(prompt)
+                  messages: topKInstructions
             });
             const remaining = completion.data.choices[0].message.content;
-            console.log(remaining);
-            return remaining;
+            console.log('picked indices', remaining);
+            return JSON.parse(remaining);
       }
 }
 
@@ -66,8 +68,7 @@ let topKInstructions = [
             "role": "assistant",
             "content": `[0, 4, 7, 8]`
       },
-
-      {//STOP HERE
+      {
             "role": "user",
             "content": `fileObjects=[{"display_name":"week6-context-free-grammars.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:4330:0AAA Fall23 Theory of Computation"},{"display_name":"lec5-metrics.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:2210:0AAA Fall20 Discrete Structures"},{"display_name":"cs3640-syllabus.pdf","created_at":"2023-08-30T21:54:21Z","summary":"Summary","course_name":"CS:3640:0AAA Fall23 Networks"},{"display_name":"JPNS_1506_Midterm2_Study_Guide.docx","created_at":"2023-09-01T21:54:21Z","summary":"Summary","course_name":"JPNS:1506:0AAA Fall23 Ghostly Japan"},{"display_name":"JPNS_1506_Syllabus - Full_Fa 2023_UPDATED.docx","created_at":"2023-09-01T21:54:21Z","summary":"Summary","course_name":"JPNS:1506:0AAA Fall23 Ghostly Japan"},{"display_name":"inclass-9-30.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:4330:0AAA Fall23 Theory of Computation"},{"display_name":"1506_Week1_Intro and Basics_Fa23.pptx","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"JPNS:1506:0AAA Fall23 Ghostly Japan"},{"display_name":"ARTH 1070 DOE Syllabus_Fall 2023.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"ARTH:1070:0AA1 Fall23 Art of Asia"},{"display_name":"hw2.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:4330:0AAA Fall20 Theory of Computation"},{"display_name":"inclass-8-22.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:4330:0AAA Fall23 Theory of Computation"},{"display_name":"syllabus.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:4330:0AAA Fall23 Theory of Computation"},{"display_name":"JPNS_1506_Midterm1_Study_Guide.docx","created_at":"2023-09-01T21:54:21Z","summary":"Summary","course_name":"JPNS:1506:0AAA Fall23 Ghostly Japan"}],
             questionString="What materials posted on Canvas are relevant to my next Ghostly Japan midterm?", k=2`

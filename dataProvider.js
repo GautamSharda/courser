@@ -17,17 +17,36 @@ class DataProvider{
       this.userToken = canvasToken;
     }
 
-    getCanvasFileMetadata = async () => {
+    getCanvasFileMetadata = async (idd=false) => {
       await mongoClient.connect()
       const db = mongoClient.db('test');
       const users = db.collection('users');
 
       const user = await users.findOne({ canvasToken: this.userToken });
 
-      let combinedArray = [].concat(...Object.values(user.files));
-      combinedArray = combinedArray.map(({ display_name, created_at, course_name, summary }) => ({ display_name, created_at, course_name,summary }));
-
+      let combinedArray = user.files;
+      if (idd){
+        // Include raw text
+        combinedArray = combinedArray.map(({ id }) => ({ id, rawText }));
+      }else{
+        combinedArray = combinedArray.map(({id, display_name, created_at, course_name, summary }) => ({id, display_name, created_at, course_name,summary }));
+      }
+      
       return(combinedArray)
+    }
+
+    fetchRawTextOfFile = async(id) => {
+      console.log(id);
+      await mongoClient.connect()
+      const db = mongoClient.db('test');
+      const users = db.collection('users');
+
+      const user = await users.findOne({ canvasToken: this.userToken });
+      
+      let combinedArray = user.files;
+
+      let doc = combinedArray.find(item => String(item.id) === String(id));
+      return doc.rawText;
     }
 
 
