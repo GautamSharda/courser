@@ -41,7 +41,7 @@ async function processFile(fileUrl, metadata) {
 
     // Specify LLM model
     const serviceContext = serviceContextFromDefaults({
-        llm: new OpenAI({ model: "gpt-4", temperature: 0 }),
+        llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
     });
     
     // Indexing 

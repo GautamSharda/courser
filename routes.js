@@ -22,16 +22,16 @@ Routes.post("/home", async (req, res) => {
     console.log(canvasToken)
     let existingUser = await user.findOne({ canvasToken });
     console.log(canvasToken)
-    // if (existingUser) {
-    //     if (existingUser.files.length===0){
-    //         postCanvasData(existingUser, canvasToken);
-    //     }
-    //     res.json(existingUser);
-    // } else {
+    if (existingUser) {
+        if (existingUser.files.length===0){
+            postCanvasData(existingUser, canvasToken);
+        }
+        res.json(existingUser);
+    } else {
     let newUser = await user.create({ canvasToken });
     postCanvasData(newUser, canvasToken);
     res.json(newUser);
-    // }
+    }
 });
 
 
@@ -62,7 +62,7 @@ async function processFile(fileUrl, metadata) {
 
     // Specify LLM model
     const serviceContext = serviceContextFromDefaults({
-        llm: new OpenAI({ model: "gpt-3.5-turbo", temperature: 0 }),
+        llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
     });
 
     // Indexing 
@@ -270,19 +270,21 @@ Routes.post('/answer', async (req, res) => {
     // console.log(documents);
 
     let documents = [];
+    let sources = [];
     console.log("kMostRelevantFiles", kMostRelevant);
     for (let i = 0; i < kMostRelevant.length; i++) {
         const file = kMostRelevant[i];
         const dp = new DataProvider(canvasToken);
         // console.log(file.id);
         let rawText = await dp.fetchRawTextOfFile(file.id); // ??
-        console.log(rawText);
+        console.log(rawText + '\n');
+        sources.push(file.url);
         documents.push(new Document({ text: rawText }))
     }
 
     // Specify LLM model
     const serviceContext = serviceContextFromDefaults({
-        llm: new OpenAI({ model: "gpt-3.5-turbo", temperature: 0 }),
+        llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
     });
 
     // console.log(documents);
@@ -294,7 +296,10 @@ Routes.post('/answer', async (req, res) => {
     );
 
     const answer = response.toString();
-    console.log(`the final answer: ${answer}`);
+    console.log(`FINAL ANSWER: ${answer}.\n`);
+    for (let i = 0; i < sources.length; i++){
+        console.log( `Source ${i+1}=${sources}\n`);
+    }
 
     const foundUser = await user.findOne({ canvasToken });
     foundUser.questions.push(prompt);

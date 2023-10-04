@@ -29,7 +29,7 @@ class DataProvider{
         // Include raw text
         combinedArray = combinedArray.map(({ id }) => ({ id, rawText }));
       }else{
-        combinedArray = combinedArray.map(({id, display_name, created_at, course_name, summary }) => ({id, display_name, created_at, course_name,summary }));
+        combinedArray = combinedArray.map(({id, display_name, url, created_at, course_name, summary }) => ({id, display_name, url, created_at, course_name,summary }));
       }
       
       return(combinedArray)

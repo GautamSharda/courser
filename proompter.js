@@ -18,16 +18,21 @@ class Proompter {
             });
             const remaining = completion.data.choices[0].message.content;
             console.log('picked indices', remaining);
+            try {
             return JSON.parse(remaining);
+            }catch(e){
+                  console.log('picker error', e);
+            };
+            return [];
       }
 }
 
 let topKInstructions = [
       {
             "role": "system",
-            "content": `You are a top K most logically useful file objects picker. Given an array of file objects, a question string, and an integer k, you must output an array of indices of the K file objects in the given array that would be most useful for answering the question. 
+            "content": `You are a top K most potentially useful file object indices picker. Given an array of file objects, a question string, and an integer k, you must output an array of indices of the K file objects in the given array that could be the most useful for answering the question. You are just making a guess, and do not have to be right.
             Here is what a file object looks like: {"display_name":"lec5-metrics.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:2210:0AAA Fall20 Discrete Structures"}.
-            Remember, you must never output anything other than 1 array of size K containing K indices of K file objects from the given array that are most useful for answering the question.`
+            Remember, you must never output anything other than 1 array of size K containing K indices of K file objects from the given array that are most useful for answering the question. Since your job is just to make your best guess, you must never output 0 indices or say that you cannot answer the question because there is no information. Always output an index regardless of whether or not there is information. Do not output the actual files themselves, only their indices.`
       },
       {
             "role": "user",
