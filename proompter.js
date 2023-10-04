@@ -10,9 +10,9 @@ class Proompter {
       pickTopKFiles = async (files, query, k) => {
             console.log('hit picker');
             const prompt = `fileObjects=${JSON.stringify(files)}, questionString=${query}, k=${k}`;
-            topKInstructions.push({"role" : "user", "content": prompt});
+            topKInstructions.push({ "role": "user", "content": prompt });
             const completion = await this.openai.createChatCompletion({
-                  model: 'gpt-4',
+                  model: 'gpt-3.5-turbo',
                   temperature: 0,
                   messages: topKInstructions
             });
@@ -25,9 +25,13 @@ class Proompter {
 let topKInstructions = [
       {
             "role": "system",
-            "content": `You are a top K most logically useful file objects picker. Given an array of file objects, a question string, and an integer k, you must output an array of indices of the K file objects in the given array that would be most useful for answering the question. 
-            Here is what a file object looks like: {"display_name":"lec5-metrics.pdf","created_at":"2023-09-05T21:54:21Z","summary":"Summary","course_name":"CS:2210:0AAA Fall20 Discrete Structures"}.
-            Remember, you must never output anything other than 1 array of size K containing K indices of K file objects from the given array that are most useful for answering the question.`
+            "content": `As a file objects picker, you receive an array of file objects, a question string, and an integer k. Your task is to output an array of indices representing the top K file objects most useful for answering the question.
+
+            A file object is defined as follows: {"display_name":"...", "created_at":"...", "summary":"...", "course_name":"..."}.
+
+            Consider the fields display_name, created_at, summary, and course_name to determine usefulness.
+
+            Ensure the output is a single array of size K, containing indices of the selected file objects.`
       },
       {
             "role": "user",
