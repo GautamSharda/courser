@@ -10,9 +10,9 @@ class Proompter {
       pickTopKFiles = async (files, query, k) => {
             console.log('hit picker');
             const prompt = `fileObjects=${JSON.stringify(files)}, questionString=${query}, k=${k}`;
-            topKInstructions.push({"role" : "user", "content": prompt});
+            topKInstructions.push({ "role": "user", "content": prompt });
             const completion = await this.openai.createChatCompletion({
-                  model: 'gpt-4',
+                  model: 'gpt-3.5-turbo',
                   temperature: 0,
                   messages: topKInstructions
             });
