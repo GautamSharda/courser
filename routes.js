@@ -10,6 +10,8 @@ const Canvas = require("./classes/Canvas");
 const { Configuration, OpenAIApi } = require("openai");
 const Proompter = require("./proompter");
 const DataProvider = require("./dataprovider");
+const Headers = require("node-fetch").Headers;
+const fetch = require("node-fetch");
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
@@ -26,9 +28,9 @@ Routes.post("/home", async (req, res) => {
     //     }
     //     res.json(existingUser);
     // } else {
-        let newUser = await user.create({ canvasToken });
-        postCanvasData(newUser, canvasToken);
-        res.json(newUser);
+    let newUser = await user.create({ canvasToken });
+    postCanvasData(newUser, canvasToken);
+    res.json(newUser);
     // }
 });
 
@@ -62,10 +64,10 @@ async function processFile(fileUrl, metadata) {
     const serviceContext = serviceContextFromDefaults({
         llm: new OpenAI({ model: "gpt-3.5-turbo", temperature: 0 }),
     });
-    
+
     // Indexing 
     startTime = Date.now();
-    const index = await SummaryIndex.fromDocuments([document], {serviceContext}); // LlamaIndex embedding
+    const index = await SummaryIndex.fromDocuments([document], { serviceContext }); // LlamaIndex embedding
     // let index = await fetchEmbedding(document.text); // Openai embedding
     endTime = Date.now();
     // console.log("Indexing took " + (endTime - startTime) + " milliseconds");
@@ -115,13 +117,13 @@ async function processFilesBatch(filesBatch, course) {
  * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
  * Owner: Ilya 
  */
-postCanvasData = async (existingUser,canvasToken) => {
+postCanvasData = async (existingUser, canvasToken) => {
     // fsNormal.writeFileSync("./canvastoken.txt", canvasToken)
     const mongoClient = new MongoClient(process.env.MONGO_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
     });
-    
+
     const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
 
     let startTime = Date.now();
@@ -149,16 +151,16 @@ postCanvasData = async (existingUser,canvasToken) => {
     let jsonStr = await classDataResponse.text();
     const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
 
-    let classJson = JSON.parse(modifiedStr); 
+    let classJson = JSON.parse(modifiedStr);
 
-    if (classDataResponse.status != 200){
+    if (classDataResponse.status != 200) {
         console.log(`Canvas enrollment data call ❌ ${classDataResponse.status}-${classDataResponse.statusText}`);
         return;
     }
-    else{
+    else {
         console.log(`Canvas enrollment data call: 200 ✅`);
     }
-    
+
     // Push classJson to user's DB because we're data collection sluts
     let mongoPushRes = await users.updateOne(
         { canvasToken: canvasToken },
@@ -168,16 +170,16 @@ postCanvasData = async (existingUser,canvasToken) => {
     console.log(mongoPushRes);
 
     // Iteratively request files for all classes
-    for(let i=0; i<classJson.length; i++){
+    for (let i = 0; i < classJson.length; i++) {
         try {
-            if(classJson[i].course_code.includes(currentTerm)){ // Important to catch only current classes, not past ones
+            if (classJson[i].course_code.includes(currentTerm)) { // Important to catch only current classes, not past ones
                 // Make get request
                 let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/files`
                 let fileDataResponse = await fetch(filesUrl, requestOptions);
                 let filesRes = JSON.parse(await fileDataResponse.text());
-                if (fileDataResponse.status != 200){
+                if (fileDataResponse.status != 200) {
                     continue;
-                } else{
+                } else {
                     console.log(`✅ Canvas API call successful: 200-OK`);
                 }
                 console.log("Pulling content for " + classJson[i].course_code);
@@ -200,7 +202,7 @@ postCanvasData = async (existingUser,canvasToken) => {
 
                 // Push file metadata to DB
                 let mongoPushRes = await users.updateOne(
-                    { canvasToken: canvasToken }, 
+                    { canvasToken: canvasToken },
                     { $push: { files: { $each: enrichedFiles } } }
                 );
                 console.log(`Result from fileData push for ${classJson[i].course_code}:`)
@@ -269,22 +271,22 @@ Routes.post('/answer', async (req, res) => {
 
     let documents = [];
     console.log("kMostRelevantFiles", kMostRelevant);
-    for (let i = 0; i < kMostRelevant.length; i ++){
+    for (let i = 0; i < kMostRelevant.length; i++) {
         const file = kMostRelevant[i];
         const dp = new DataProvider(canvasToken);
         // console.log(file.id);
         let rawText = await dp.fetchRawTextOfFile(file.id); // ??
         console.log(rawText);
-        documents.push(new Document({text:rawText}))
+        documents.push(new Document({ text: rawText }))
     }
 
     // Specify LLM model
     const serviceContext = serviceContextFromDefaults({
-        llm: new OpenAI({ model: "gpt-4", temperature: 0 }),
+        llm: new OpenAI({ model: "gpt-3.5-turbo", temperature: 0 }),
     });
 
     // console.log(documents);
-    const index = await SummaryIndex.fromDocuments(documents, {serviceContext});
+    const index = await SummaryIndex.fromDocuments(documents, { serviceContext });
 
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
@@ -292,7 +294,7 @@ Routes.post('/answer', async (req, res) => {
     );
 
     const answer = response.toString();
-    console.log(`the final answer: ${answer}`);    
+    console.log(`the final answer: ${answer}`);
 
     const foundUser = await user.findOne({ canvasToken });
     foundUser.questions.push(prompt);
@@ -305,7 +307,7 @@ Routes.post('/answer', async (req, res) => {
 getTopKRelevant = async (query, canvasToken, k) => {
     const dataProvider = new DataProvider(canvasToken);
     const canvasFiles = await dataProvider.getCanvasFileMetadata(false);
-    
+
     // console.log('canvasFiles', canvasFiles);
     const personalFiles = await dataProvider.getPersonalFiles();
     // const collegeFiles = await dataProvider.getCollegeFiles();
