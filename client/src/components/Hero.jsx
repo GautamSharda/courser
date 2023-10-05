@@ -22,7 +22,7 @@ export function Hero({signUpButton}) {
         .
       </h1>
       <p className="mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-700">
-        Stop manually looking through school material to find answers. Just ask your question, let courser find the answer, and get back to work.
+        Stop manually looking through school material to find answers. Just ask your question, let Courser fly to find the answer, and get back to work!
       </p>
       <div className="mt-10 flex justify-center gap-x-6">
         <Button onClick={signUpButton}>Get started with Courser</Button>

@@ -5,14 +5,52 @@ const File = require("./models/files");
 const PDFDocument = require('pdfkit');
 
 
+const { MongoClient } = require('mongodb');
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
-class dataProvider{
+// MongoDB
+const mongoClient = new MongoClient(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+class DataProvider{
     constructor(canvasToken) {
-        this.userToken = canvasToken;
+      this.userToken = canvasToken;
     }
 
-    getCanvasFiles = async () => {
+    getCanvasFileMetadata = async (idd=false) => {
+      await mongoClient.connect()
+      const db = mongoClient.db('test');
+      const users = db.collection('users');
 
+      const user = await users.findOne({ canvasToken: this.userToken });
+
+      let combinedArray = user.files;
+      if (idd){
+        // Include raw text
+        combinedArray = combinedArray.map(({ id }) => ({ id, rawText }));
+      }else{
+        combinedArray = combinedArray.map(({id, display_name, url, created_at, course_name, summary }) => ({id, display_name, url, created_at, course_name,summary }));
+      }
+      
+      return(combinedArray)
+    }
+
+    fetchRawTextOfFile = async(id) => {
+      console.log(id);
+      await mongoClient.connect()
+      const db = mongoClient.db('test');
+      const users = db.collection('users');
+
+      const user = await users.findOne({ canvasToken: this.userToken });
+      
+      let combinedArray = user.files;
+
+      let doc = combinedArray.find(item => String(item.id) === String(id));
+      return doc.rawText;
     }
 
 
@@ -90,14 +128,14 @@ class dataProvider{
         return `data/${this.userToken}/${fileName}`;
     }
 
-    getUIFiles = async(query) => {
+    getCollegeFiles = async(query) => {
         const courseJSON = await this.queryMongoVectorDB(query);
         const courseJsons = courseJSON.map(this.courseJsonReducer);
         const configuration = new Configuration({apiKey: process.env.OPENAI_API_KEY});
         const openai = new OpenAIApi(configuration);
         const completion = await openai.createChatCompletion({model: 'gpt-3.5-turbo-16k',temperature: 0,messages: [{"role": "system","content": `You are a helpful AI assistant who helps students plan their schedules. You are given a list of courses (this includes their information) and a question from a student. Answer their question with the information provided`},{"role": "user","content": `Courses: ${JSON.stringify(courseJsons)}\n\n Question: ${query}`}]});
-        const remaining = completion.data.choices[0].message.content;
-        return this.writeFiles(remaining);
+        const response = completion.data.choices[0].message.content;
+        return response;
     }
 
     uploadFileToMongo = async (file) => {
@@ -132,9 +170,9 @@ class dataProvider{
       };
 
     getPersonalFiles = async() => {
-
+      return {};
     }
 
 }
 
-module.exports = dataProvider;
+module.exports = DataProvider;
