@@ -176,7 +176,7 @@ export function Main() {
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm
               sendNextQuestion={setCanvasToken}
-              placeholder={"What is you ICON access token"}
+              placeholder={"What is you Canvas access token"}
               buttonText={"Submit"}
             />
           </div>
