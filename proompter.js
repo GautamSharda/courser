@@ -12,7 +12,7 @@ class Proompter {
             const prompt = `fileObjects=${JSON.stringify(files)}, questionString=${query}, k=${k}`;
             topKInstructions.push({ "role": "user", "content": prompt });
             const completion = await this.openai.createChatCompletion({
-                  model: 'gpt-3.5-turbo',
+                  model: 'gpt-4',
                   temperature: 0,
                   messages: topKInstructions
             });

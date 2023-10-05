@@ -277,7 +277,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     // console.log(prompt);
 
     // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    const kMostRelevant = await getTopKRelevant(prompt, canvasToken, 3); // Json array of file metadata
+    const kMostRelevant = await getTopKRelevant(prompt, canvasToken, 2); // Json array of file metadata
     // for (file in kMostRelevant){
     //     const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
     //     if (file.rawText){
