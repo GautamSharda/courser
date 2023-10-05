@@ -2,7 +2,6 @@
 
 // pages/client-rendered-page.js
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import React, { useState, useMemo, useRef, useEffect } from 'react'
 import isLoggedIn from '@/helpers/isLoggedIn';
 import { Loader } from './Loader';
 import { Plan } from './Plan';
@@ -11,18 +10,6 @@ import Dropdown from './Dropdown';
 import ToolTip from './ToolTip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
-
-let isLocal = false;
-try {
-  isLocal = window.location.href.includes('localhost');
-} catch (e) {}
-// const TESTING = false;
-console.log('isLocal');
-console.log(isLocal);
-
-const constants = {
-  url: isLocal ? "http://localhost:8000" : "https://courser-production.up.railway.app",
-};
 
 import constants from '@/helpers/constants';
 import { redirect } from 'next/dist/server/api-utils';
@@ -176,9 +163,7 @@ export function Main() {
         <main className='h-full'>
           <div className="mx-auto max-w-7xl h-full">
             <div className="w-full h-[70%] flex flex-col items-center justify-center">
-              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} />
-
-              <CommentForm sendNextQuestion={sendNextQuestion} placeholder={`e.g. "what should I study for my networks exam?"`} file={file} addFile={handleFileUpload}/>
+              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`}/>
             </div>
           </div>
         </main>
