@@ -1,11 +1,15 @@
 'use client'
 
 // pages/client-rendered-page.js
-import React, { useState, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { Loader } from './Loader';
 import { Plan } from './Plan';
 import messagesHook from '@/helpers/useMessage';
 import Dropdown from './Dropdown';
+import ToolTip from './ToolTip';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+
 let isLocal = false;
 try {
   isLocal = window.location.href.includes('localhost');
@@ -23,6 +27,8 @@ export function Main() {
   const [file, setFile] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, addMessage] = messagesHook();
+  const [showYTModal, setShowYTModal] = useState(false);
+
   const myRef = useRef(null);
   const version = useMemo(() => {
     if (!authToken) return 'authToken';
@@ -89,7 +95,26 @@ export function Main() {
     setFile(files);
   }
 
+  const toggleYTModal = (e) => {
+    e.stopPropagation();
+    setShowYTModal(!showYTModal);
+  };
 
+  const handleOutsideClickYTModal = (e) => {
+    const clickedOnFontAwesomeIcon = e.target.closest('.fa-question-circle');
+    console.log(clickedOnFontAwesomeIcon)
+    if (showYTModal && !clickedOnFontAwesomeIcon) {
+      setShowYTModal(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleOutsideClickYTModal);
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClickYTModal);
+    };
+  }, [showYTModal]);
 
   if (isLoading) return <Loader />;
 
@@ -126,8 +151,7 @@ export function Main() {
         <main className='h-full'>
           <div className="mx-auto max-w-7xl h-full">
             <div className="w-full h-[70%] flex flex-col items-center justify-center">
-              {/*file={file} addFile={handleFileUpload}*/}
-              <CommentForm sendNextQuestion={sendNextQuestion} />
+              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} />
             </div>
           </div>
         </main>
@@ -136,7 +160,12 @@ export function Main() {
     );
   }
   return (
-    <div className="py-10 h-[90%]">
+    <div className="py-10 h-[80%] flex flex-col items-center justify-center">
+      {showYTModal ?
+        <div className="absolute z-10 overflow-y-auto p-5 bg-iowaYellow-500 rounded-lg flex justify-center items-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <iframe width="600" height="400" src="https://www.youtube.com/embed/phzp5RBNYNs?si=o8z-dcrt7M-HjUYH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        : null}
       <header>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">Get Started With Courser</h1>
@@ -147,12 +176,23 @@ export function Main() {
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm
               sendNextQuestion={setCanvasToken}
-              placeholder={"Enter your first name"}
+              placeholder={"What is you ICON access token"}
               buttonText={"Submit"}
             />
           </div>
         </div>
       </main>
+      <footer className="flex justify-center items-center group w-auto">
+        <ToolTip text="Help?">
+          <FontAwesomeIcon
+            icon={faQuestionCircle}
+            size="2x"
+            color="#FBBF24"
+            onClick={(e) => toggleYTModal(e)}
+            className="cursor-pointer transition-colors duration-300 hover:text-yellow-400 cursor-pointer fa-question-circle"
+          />
+        </ToolTip>
+      </footer>
     </div>
   );
 }
