@@ -3,7 +3,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 const express = require("express");
 const Routes = express.Router();
-const user = require("./models/user");
+const User = require("./models/user");
 const fs = require("fs/promises");
 const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI, SimpleDirectoryReader } = require("llamaindex");
 const Canvas = require("./classes/Canvas");
@@ -21,18 +21,27 @@ const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
 const fsNormal = require('fs');
 
+Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
+    const { canvasToken } = req.body;
+    const foundUser = await User.findById(res.userProfile._id);
+    foundUser.canvasToken = canvasToken;
+    await foundUser.save();
+    postCanvasData(res.userProfile._id.toString(), canvasToken);
+    res.json({ user: foundUser });
+}));
+
 Routes.get("/home", isLoggedIn, asyncMiddleware(async (req, res) => {
     const fileIds = res.userProfile.files;
     const files = [];
-    for (const fileId of fileIds) {
-        //get only the field fileName from the file object
-        const fileName = await File.findById(fileId).select('fileName');
-        files.push({name: fileName.fileName, id: fileId});
-    }
-    res.userProfile.files = files;
-    if (existingUser.files.length===0){
-            postCanvasData(res.userProfile, res.userProfile.canvasToken);
-    }
+    // for (const fileId of fileIds) {
+    //     //get only the field fileName from the file object
+    //     const fileName = await File.findById(fileId).select('fileName');
+    //     files.push({name: fileName.fileName, id: fileId});
+    // }
+    // res.userProfile.files = files;
+    // if (files.length === 0 && res.userProfile.canvasToken){
+    //     postCanvasData(res.userProfile._id.toString(), res.userProfile.canvasToken);
+    // }
     res.json({user: res.userProfile});
 }));
 
@@ -124,27 +133,15 @@ async function processFilesBatch(filesBatch, course) {
  * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
  * Owner: Ilya 
  */
-postCanvasData = async (existingUser, canvasToken) => {
+postCanvasData = async (userID, canvasToken) => {
     // fsNormal.writeFileSync("./canvastoken.txt", canvasToken)
-    const mongoClient = new MongoClient(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-
     const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
 
     let startTime = Date.now();
     // Connect to MongoDB
-    await mongoClient.connect()
-    const db = mongoClient.db('test');
-    const users = db.collection('users');
 
     // Clear existing files, since were repulling them
-    await users.updateOne(
-        { canvasToken: canvasToken },
-        { $set: { files: [] } }
-    );
-
+    await User.findByIdAndUpdate(userID, { $set: { files: [] } }, { new: true });
     // Step 1: Pull classes from Canvas API
     var myHeaders = new Headers();
     myHeaders.append("Authorization", `Bearer ${canvasToken}`);
@@ -169,10 +166,7 @@ postCanvasData = async (existingUser, canvasToken) => {
     }
 
     // Push classJson to user's DB because we're data collection sluts
-    let mongoPushRes = await users.updateOne(
-        { canvasToken: canvasToken },
-        { $set: { classData: classJson } }
-    );
+    let mongoPushRes = await User.findByIdAndUpdate(userID,{ $set: { classData: classJson } });
     console.log(`Result from enrollment data push:`)
     console.log(mongoPushRes);
 
@@ -208,10 +202,7 @@ postCanvasData = async (existingUser, canvasToken) => {
                 }
 
                 // Push file metadata to DB
-                let mongoPushRes = await users.updateOne(
-                    { canvasToken: canvasToken },
-                    { $push: { files: { $each: enrichedFiles } } }
-                );
+                let mongoPushRes = await User.findByIdAndUpdate(userID,{ $push: { files: { $each: enrichedFiles } } });
                 console.log(`Result from fileData push for ${classJson[i].course_code}:`)
                 console.log(mongoPushRes);
             }
@@ -239,13 +230,13 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
             const fileNameNoDot = myfile.name.split('.')[0];
             const filePath = path.join(__dirname, 'userFiles', fileNameNoDot + myfile.md5 + '.pdf');
             await myfile.mv(filePath);
-            const dp = new dataProvider(res.userProfile._id.toString());
+            const dp = new DataProvider(res.userProfile._id.toString());
             const uploadedFile = await dp.uploadFileToMongo(myfile);
             mongoFiles.push({name: uploadedFile.fileName, id: uploadedFile._id.toString()});
             fileIds.push(uploadedFile._id.toString());
             //const writePdf = await dp.createPdfFromMongoId(uploadedFile._id.toString(), 'data');
         }
-        const foundUser = await user.findById(res.userProfile._id);
+        const foundUser = await User.findById(res.userProfile._id);
         foundUser.files = foundUser.files.concat(fileIds);
         await foundUser.save();
         console.log(foundUser);
@@ -260,9 +251,9 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
 Routes.post('/accountCreation', async (req, res) => {
     const { idToken, email, name } = req.body;
     const uid = randomStringToHash24Bits(idToken);
-    const foundUser = await user.findById(uid);
+    const foundUser = await User.findById(uid);
     if (!foundUser) {
-        const newUser = new user({ _id: uid, email: email, name: name })
+        const newUser = new User({ _id: uid, email: email, name: name })
         await newUser.save();
     }
     const token = jwt.sign({ _id: uid, }, process.env.JWT_PRIVATE_KEY, { expiresIn: "1000d" });
@@ -271,13 +262,13 @@ Routes.post('/accountCreation', async (req, res) => {
 
 
 Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
-    const { canvasToken, prompt } = req.body;
+    const { prompt } = req.body;
     console.log('we are hitting');
     // console.log(canvasToken);
     // console.log(prompt);
 
     // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    const kMostRelevant = await getTopKRelevant(prompt, canvasToken, 3); // Json array of file metadata
+    const kMostRelevant = await getTopKRelevant(prompt, res.userProfile, 3); // Json array of file metadata
     // for (file in kMostRelevant){
     //     const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
     //     if (file.rawText){
@@ -302,7 +293,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     console.log("kMostRelevantFiles", kMostRelevant);
     for (let i = 0; i < kMostRelevant.length; i++) {
         const file = kMostRelevant[i];
-        const dp = new DataProvider(canvasToken);
+        const dp = new DataProvider(res.userProfile._id.toString());
         // console.log(file.id);
         let rawText = await dp.fetchRawTextOfFile(file.id); // ??
         console.log(rawText + '\n');
@@ -329,7 +320,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
         console.log( `Source ${i+1}=${sources}\n`);
     }
 
-    const foundUser = await user.findOne({ canvasToken });
+    const foundUser = await User.findById(res.userProfile._id.toString());
     foundUser.questions.push(prompt);
     foundUser.responses.push(answer);
     await foundUser.save();
@@ -337,8 +328,8 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     res.json(foundUser);
 }));
 
-getTopKRelevant = async (query, canvasToken, k) => {
-    const dataProvider = new DataProvider(canvasToken);
+getTopKRelevant = async (query, user, k) => {
+    const dataProvider = new DataProvider(user._id.toString());
     const canvasFiles = await dataProvider.getCanvasFileMetadata(false);
 
     // console.log('canvasFiles', canvasFiles);

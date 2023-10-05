@@ -1,32 +1,25 @@
 // A high level class to orchestrate all our data queries across all our sources
-const fs = require('fs');
-const { Configuration, OpenAIApi } = require("openai");
-const File = require("./models/files");
-const PDFDocument = require('pdfkit');
-
-
-const { MongoClient } = require('mongodb');
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
 }
 
-// MongoDB
-const mongoClient = new MongoClient(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const fs = require('fs');
+const { Configuration, OpenAIApi } = require("openai");
+const File = require("./models/files");
+const PDFDocument = require('pdfkit');
+const User = require("./models/user");
+
+
+
+
 
 class DataProvider{
-    constructor(canvasToken) {
-      this.userToken = canvasToken;
+    constructor(userID) {
+      this.userID = userID;
     }
 
     getCanvasFileMetadata = async (idd=false) => {
-      await mongoClient.connect()
-      const db = mongoClient.db('test');
-      const users = db.collection('users');
-
-      const user = await users.findOne({ canvasToken: this.userToken });
+      const user = await User.findById(this.userID);
 
       let combinedArray = user.files;
       if (idd){
@@ -40,12 +33,7 @@ class DataProvider{
     }
 
     fetchRawTextOfFile = async(id) => {
-      console.log(id);
-      await mongoClient.connect()
-      const db = mongoClient.db('test');
-      const users = db.collection('users');
-
-      const user = await users.findOne({ canvasToken: this.userToken });
+      const user = await User.findById(this.userID);
       
       let combinedArray = user.files;
 

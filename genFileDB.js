@@ -6,12 +6,7 @@ const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, Op
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-
-// MongoDB
-const mongoClient = new MongoClient(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
+const User = require("./models/user");
 
 const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
 const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
@@ -99,9 +94,6 @@ async function processFilesBatch(filesBatch, course) {
 async function populateUserFiles(canvas_key){
     let startTime = Date.now();
     // Connect to MongoDB
-    await mongoClient.connect()
-    const db = mongoClient.db('test');
-    const users = db.collection('users');
 
     // Step 1: Pull classes from Canvas API
     var myHeaders = new Headers();
@@ -127,10 +119,7 @@ async function populateUserFiles(canvas_key){
     }
     
     // Push classJson to user's DB because we're data collection sluts
-    let mongoPushRes = await users.updateOne(
-        { canvasToken: canvas_key },
-        { $set: { classData: classJson } }
-    );
+    let mongoPushRes = await User.updateOne({ canvasToken: canvas_key },{ $set: { classData: classJson } });
     console.log(`Result from enrollment data push:`)
     console.log(mongoPushRes);
 
@@ -182,7 +171,7 @@ async function populateUserFiles(canvas_key){
                 }
 
                 // Push file metadata to DB
-                let mongoPushRes = await users.updateOne(
+                let mongoPushRes = await User.updateOne(
                     { canvasToken: canvas_key }, 
                     { $set: { ['files.' + classJson[i].id]: enrichedFiles } }
                 );

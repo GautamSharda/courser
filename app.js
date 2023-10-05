@@ -11,7 +11,6 @@ if (process.env.NODE_ENV !== "production") {
   const Routes = require("./routes");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
-  const dataProvider = require('./dataProvider');
   const { MongoClient, ServerApiVersion } = require('mongodb');
   
   mongoose.set('strictQuery', true);

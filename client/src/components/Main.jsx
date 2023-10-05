@@ -11,19 +11,23 @@ import constants from '@/helpers/constants';
 import { redirect } from 'next/dist/server/api-utils';
 
 export function Main() {
-  const [user, setUser] = useState();
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
   const [messages, addMessage] = messagesHook();
   const myRef = useRef(null);
-  const version = useMemo(() => {
+
+  const getVersion = () => {
+    if (!user.canvasToken) return 'canvasToken';
     if (messages.length === 0) return 'firstQuestion';
     return 'chatWindow'
-  }, [messages]);
+  }
+  const version = getVersion();
 
   const file = (user && user.files) ? user.files : [];
 
   const auth = async () => {
     const res = await isLoggedIn(constants.clientUrl, '/home');
+    setIsLoading(false);
     if (res) setUser({...res.user});
   };
   
@@ -40,6 +44,26 @@ export function Main() {
       });
     }
   };
+
+  const setCanvasToken = async (token) => {
+    setIsLoading(true);
+    const data = new FormData();
+    data.append('canvasToken', token);
+    const response = await fetch(`${constants.url}/addCanvasToken`, {
+      method: 'POST',
+      body: data,
+      headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
+
+    });
+    if (response.ok) {
+      const res = await response.json();
+      console.log('response');
+      console.log(res);
+      setUser({...user, canvasToken: res.user.canvasToken});
+    }
+    setIsLoading(false);
+
+  }
 
   const sendNextQuestion = async (nextQuestion) => {
     scrollToBottom();
@@ -123,7 +147,7 @@ export function Main() {
     <div className="py-10 h-[90%]">
       <header>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">Get Started With Courser</h1>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">What is your Canvas Token</h1>
         </div>
       </header>
       <main className='h-full'>
@@ -131,7 +155,7 @@ export function Main() {
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm
               sendNextQuestion={setCanvasToken}
-              placeholder={"Enter your first name"}
+              placeholder={"Ex: 1234~1234~1234~1234"}
               buttonText={"Submit"}
             />
           </div>
