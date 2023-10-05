@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { Button } from '@/components/Button'
 import { Container } from '@/components/Container'
 
-export function Hero() {
+export function Hero({signUpButton}) {
   return (
     <Container className="pb-16 pt-20 text-center lg:pt-32">
       <h1 className="mx-auto max-w-4xl font-display text-5xl font-medium tracking-tight text-slate-900 sm:text-7xl">
@@ -25,7 +25,7 @@ export function Hero() {
         Stop manually looking through school material to find answers. Just ask your question, let Courser fly to find the answer, and get back to work!
       </p>
       <div className="mt-10 flex justify-center gap-x-6">
-        <Button href="/home">Get started with Courser</Button>
+        <Button onClick={signUpButton}>Get started with Courser</Button>
       </div>
     </Container>
   )

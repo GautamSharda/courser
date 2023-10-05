@@ -94,7 +94,7 @@ function MobileNavigation() {
   )
 }
 
-export function Header() {
+export function Header({signUpButton}) {
   return (
     <header className="py-10">
       <Container>
@@ -128,7 +128,7 @@ export function Header() {
             <div className="hidden md:block">
               {/* <NavLink href="/login">Sign in</NavLink> */}
             </div>
-            <Button href="/home" color="iowaYellow">
+            <Button onClick={signUpButton} color="iowaYellow">
               <span>
                 Get started <span className="hidden lg:inline">today</span>
               </span>

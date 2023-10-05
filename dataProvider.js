@@ -1,6 +1,10 @@
 // A high level class to orchestrate all our data queries across all our sources
 const fs = require('fs');
 const { Configuration, OpenAIApi } = require("openai");
+const File = require("./models/files");
+const PDFDocument = require('pdfkit');
+
+
 const { MongoClient } = require('mongodb');
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
@@ -133,6 +137,37 @@ class DataProvider{
         const response = completion.data.choices[0].message.content;
         return response;
     }
+
+    uploadFileToMongo = async (file) => {
+      const newFile = await File.create({buffer: Buffer.from(file.data), fileName: file.name});    
+      return newFile;
+    }
+    createPdfFromMongoId = async (fileId, outputPath) => {
+        const file = await File.findById(fileId);
+  
+        console.log(file.buffer);
+        // Get the Buffer directly
+        const fileBuffer = Buffer.from(file.buffer);
+  
+        console.log(fileBuffer);
+        // Validate it's a Buffer
+        if(!(fileBuffer instanceof Buffer)) {
+          throw new Error('Invalid file buffer');
+        }
+    
+        var done = false;
+        fs.writeFile(`${outputPath}/${file}`, fileBuffer, err => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log('PDF written to output.pdf');
+        });
+        while (!done) {
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        return 'output.pdf';
+      };
 
     getPersonalFiles = async() => {
       return {};

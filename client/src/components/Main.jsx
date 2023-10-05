@@ -2,6 +2,8 @@
 
 // pages/client-rendered-page.js
 import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
+import isLoggedIn from '@/helpers/isLoggedIn';
 import { Loader } from './Loader';
 import { Plan } from './Plan';
 import messagesHook from '@/helpers/useMessage';
@@ -22,19 +24,31 @@ const constants = {
   url: isLocal ? "http://localhost:8000" : "https://courser-production.up.railway.app",
 };
 
+import constants from '@/helpers/constants';
+import { redirect } from 'next/dist/server/api-utils';
+
 export function Main() {
-  const [authToken, setAuthToken] = useState('');
-  const [file, setFile] = useState([]);
+  const [user, setUser] = useState();
   const [isLoading, setIsLoading] = useState(false);
   const [messages, addMessage] = messagesHook();
   const [showYTModal, setShowYTModal] = useState(false);
 
   const myRef = useRef(null);
   const version = useMemo(() => {
-    if (!authToken) return 'authToken';
     if (messages.length === 0) return 'firstQuestion';
     return 'chatWindow'
-  }, [authToken, messages.length]);
+  }, [messages]);
+
+  const file = (user && user.files) ? user.files : [];
+
+  const auth = async () => {
+    const res = await isLoggedIn(constants.clientUrl, '/home');
+    if (res) setUser({...res.user});
+  };
+  
+  useEffect(() => {
+    auth();
+  }, []);
 
 
   const scrollToBottom = () => {
@@ -46,31 +60,15 @@ export function Main() {
     }
   };
 
-  const setCanvasToken = async (token) => {
-    setIsLoading(true);
-    const response = await fetch(`${constants.url}/home`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ canvasToken: token }),
-    });
-    const res = await response.json();
-    setAuthToken(token);
-    setIsLoading(false);
-    const files = res.files ? res.files : [];
-    setFile(files);
-  }
-
   const sendNextQuestion = async (nextQuestion) => {
     scrollToBottom();
     const nxtValue = { "type": "human", "text": nextQuestion }
     const data = new FormData();
     data.append('prompt', nextQuestion);
-    data.append('canvasToken', authToken);
     const response = await fetch(`${constants.url}/answer`, {
       method: 'POST',
       body: data,
+      headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
     });
     const res = await response.json();
     // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
@@ -82,17 +80,20 @@ export function Main() {
     console.log(newFiles)
     setIsLoading(true);
     const data = new FormData();
-    data.append('files', newFiles);
-    data.append('canvasToken', authToken);
+    for (let i = 0; i < newFiles.length; i++) {
+      data.append('file', newFiles[i]);
+    }
     const response = await fetch(`${constants.url}/upload`, {
       method: 'POST',
       body: data,
+      headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
+
     });
     const res = await response.json();
     console.log(res);
     setIsLoading(false);
-    const files = res.files ? res.files : [];
-    setFile(files);
+    const resFiles = res.files ? res.files : [];
+    setUser({ ...user, files: [...file, ...resFiles] });
   }
 
   const toggleYTModal = (e) => {
@@ -152,11 +153,12 @@ export function Main() {
           <div className="mx-auto max-w-7xl h-full">
             <div className="w-full h-[70%] flex flex-col items-center justify-center">
               <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} />
+
+              <CommentForm sendNextQuestion={sendNextQuestion} placeholder={`e.g. "what should I study for my networks exam?"`} file={file} addFile={handleFileUpload}/>
             </div>
           </div>
         </main>
       </div>
-
     );
   }
   return (
@@ -210,7 +212,7 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile }) {
               value={nextQuestion}
               onChange={(e) => setNextQuestion(e.target.value)}
               className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6"
-              placeholder={placeholder ? placeholder : `e.g. "what should I study for my networks exam?"`}
+              placeholder={placeholder}
             ></textarea>
           </div>
           <div className={`flex ${file ? 'justify-between align-center' : 'justify-end'} pt-2`}>
