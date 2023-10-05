@@ -13,7 +13,6 @@ const path = require('path');
 const File = require("./models/files");
 const { isLoggedIn, asyncMiddleware, randomStringToHash24Bits } = require("./middleware");
 const jwt = require("jsonwebtoken");
-
 const DataProvider = require("./dataprovider");
 const Headers = require("node-fetch").Headers;
 const fetch = require("node-fetch");
@@ -272,13 +271,7 @@ Routes.post('/accountCreation', async (req, res) => {
 
 
 Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
-    const { prompt } = req.body;
-    const currUser = res.userProfile;
-    currUser.questions.push(prompt);
-    await currUser.save();
-Routes.post('/answer', async (req, res) => {
     const { canvasToken, prompt } = req.body;
-
     console.log('we are hitting');
     // console.log(canvasToken);
     // console.log(prompt);
@@ -342,7 +335,7 @@ Routes.post('/answer', async (req, res) => {
     await foundUser.save();
 
     res.json(foundUser);
-});
+}));
 
 getTopKRelevant = async (query, canvasToken, k) => {
     const dataProvider = new DataProvider(canvasToken);
