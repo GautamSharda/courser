@@ -7,6 +7,7 @@ function classNames(...classes) {
 }
 
 export default function Dropdown({files, text}) {
+  console.log(files);
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>

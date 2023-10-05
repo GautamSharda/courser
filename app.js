@@ -36,7 +36,7 @@ if (process.env.NODE_ENV !== "production") {
     const clientPatrickDB = clientPatrick.db('test');
     global.coursesCollections = clientPatrickDB.collection('courses');
   }
-  initPatrick();
+  // initPatrick();
 
   app.use(fileUpload());
   app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));

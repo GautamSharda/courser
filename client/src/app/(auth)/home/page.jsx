@@ -9,6 +9,8 @@ import Link from 'next/link'
 import { Main } from '@/components/Main'
 
 function Home() {
+
+
   return (
     <div className="min-h-full">
       <nav className="border-b border-gray-200 bg-white">

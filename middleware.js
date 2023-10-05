@@ -1,26 +1,38 @@
 const jwt = require("jsonwebtoken");
+const crypto = require('crypto');
+const user = require("./models/user");
+
+
 if (process.env.NODE_ENV !== "production") {
     require('dotenv').config();
 }
-const users = require('./models/user');
 
-const isLoggedIn = (req, res, next) => {
+
+
+const randomStringToHash24Bits = (inputString) => {
+    return crypto.createHash('sha256').update(inputString).digest('hex').substring(0, 24);
+}
+
+const isLoggedIn = async (req, res, next) => {
     const token = req.headers["x-access'courser-auth-token"];
+    console.log(token);
 
     //check if token exists or is null in an if statement
-    if (!token || token === "" || token === undefined || token === null || token === "null") {
-        return res.status(401).send(JSON.stringify("not-logged-in"));
-    } else {
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
-            const user = users.findById(decoded._id);
-            if (!user) {
-                return res.status(401).send(JSON.stringify("no user found"));
-            }
-            res.userId = decoded._id;
-        } catch (er) {
-            return res.status(401).send(JSON.stringify("ERROR"));
+    console.log('1')
+    if (!token) return res.status(401).send(JSON.stringify("not-logged-in"));
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_PRIVATE_KEY);
+        console.log(decoded)
+        const foundUser = await user.findById(decoded._id);
+        if (!foundUser) {
+            console.log('2')
+            return res.status(401).send(JSON.stringify("no user found"));
         }
+        console.log(foundUser);
+        res.userProfile = foundUser;
+    } catch (er) {
+        console.log('3')
+        return res.status(401).send(JSON.stringify("ERROR"));
     }
     next();
 };
@@ -29,4 +41,4 @@ const asyncMiddleware = fn =>
     Promise.resolve(fn(req, res, next)).catch(next);
 };
 
-module.exports = { isLoggedIn, asyncMiddleware };
+module.exports = { isLoggedIn, asyncMiddleware, randomStringToHash24Bits };
