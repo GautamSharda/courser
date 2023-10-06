@@ -21,7 +21,7 @@ Routes.post("/home", async (req, res) => {
         res.json(existingUser);
     } else {
         let newUser = await user.create({ canvasToken });
-        // postCanvasData(newUser, canvasToken); test
+        // postCanvasData(newUser, canvasToken);
         res.json(newUser);
     }
 });
