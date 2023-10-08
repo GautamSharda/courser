@@ -30,13 +30,13 @@ export function Main() {
   const version = getVersion();
 
   const file = (user && user.personalFiles) ? user.personalFiles : [];
- 
+
   const auth = async () => {
     const res = await isLoggedIn(constants.clientUrl, '/home');
     setIsLoading(false);
-    if (res) setUser({...res.user});
+    if (res) setUser({ ...res.user });
   };
-  
+
   useEffect(() => {
     auth();
   }, []);
@@ -65,7 +65,7 @@ export function Main() {
       const res = await response.json();
       console.log('response');
       console.log(res);
-      setUser({...user, canvasToken: res.user.canvasToken});
+      setUser({ ...user, canvasToken: res.user.canvasToken });
     }
     setIsLoading(false);
 
@@ -163,7 +163,7 @@ export function Main() {
         <main className='h-full'>
           <div className="mx-auto max-w-7xl h-full">
             <div className="w-full h-[70%] flex flex-col items-center justify-center">
-              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`}/>
+              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`} />
             </div>
           </div>
         </main>
@@ -220,7 +220,7 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile }) {
               rows={1}
               value={nextQuestion}
               onChange={(e) => setNextQuestion(e.target.value)}
-              className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6"
+              className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6 textInput"
               placeholder={placeholder}
             ></textarea>
           </div>

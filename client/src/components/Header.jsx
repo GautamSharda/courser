@@ -94,7 +94,7 @@ function MobileNavigation() {
   )
 }
 
-export function Header({signUpButton}) {
+export function Header({ signUpButton }) {
   return (
     <header className="py-10">
       <Container>
@@ -110,17 +110,17 @@ export function Header({signUpButton}) {
               />
             </Link>
             <div className="hidden md:flex md:gap-x-6">
-              <a href="https://www.patrickrfoster.com" target='_blank'     
+              <a href="https://www.patrickrfoster.com" target='_blank'
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                  About Us
+                About Us
               </a>
-              <a href="https://www.linkedin.com/in/liao-zhu/" target='_blank'     
+              <a href="https:liaozhu.dev" target='_blank'
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                  Contact
+                Contact
               </a>
-              <a href="https://twitter.com/gautam_sharda_" target='_blank'     
+              <a href="https://twitter.com/gautam_sharda_" target='_blank'
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                  Our Socials
+                Our Socials
               </a>
             </div>
           </div>
