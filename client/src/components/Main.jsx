@@ -71,19 +71,19 @@ export function Main() {
   }
 
   const sendNextQuestion = async (nextQuestion) => {
-    // scrollToBottom();
-    // const nxtValue = { "type": "human", "text": nextQuestion }
-    // const data = new FormData();
-    // data.append('prompt', nextQuestion);
-    // const response = await fetch(`${constants.url}/answer`, {
-    //   method: 'POST',
-    //   body: data,
-    //   headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
-    // });
-    // const res = await response.json();
-    // // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
-    // addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom);
-    addMessage([{ "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom);
+    scrollToBottom();
+    const nxtValue = { "type": "human", "text": nextQuestion }
+    const data = new FormData();
+    data.append('prompt', nextQuestion);
+    const response = await fetch(`${constants.url}/answer`, {
+      method: 'POST',
+      body: data,
+      headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
+    });
+    const res = await response.json();
+    // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
+    addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom);
+    // addMessage([{ "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom); Use this line for testing outside openai
   }
 
   const handleFileUpload = async (e) => {
