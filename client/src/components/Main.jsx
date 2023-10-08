@@ -41,7 +41,6 @@ export function Main() {
     auth();
   }, []);
 
-
   const scrollToBottom = () => {
     if (myRef.current) {
       myRef.current.scrollTo({
@@ -72,18 +71,19 @@ export function Main() {
   }
 
   const sendNextQuestion = async (nextQuestion) => {
-    scrollToBottom();
-    const nxtValue = { "type": "human", "text": nextQuestion }
-    const data = new FormData();
-    data.append('prompt', nextQuestion);
-    const response = await fetch(`${constants.url}/answer`, {
-      method: 'POST',
-      body: data,
-      headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
-    });
-    const res = await response.json();
-    // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
-    addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom);
+    // scrollToBottom();
+    // const nxtValue = { "type": "human", "text": nextQuestion }
+    // const data = new FormData();
+    // data.append('prompt', nextQuestion);
+    // const response = await fetch(`${constants.url}/answer`, {
+    //   method: 'POST',
+    //   body: data,
+    //   headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
+    // });
+    // const res = await response.json();
+    // // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
+    // addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom);
+    addMessage([{ "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom);
   }
 
   const handleFileUpload = async (e) => {
@@ -114,7 +114,6 @@ export function Main() {
 
   const handleOutsideClickYTModal = (e) => {
     const clickedOnFontAwesomeIcon = e.target.closest('.fa-question-circle');
-    console.log(clickedOnFontAwesomeIcon)
     if (showYTModal && !clickedOnFontAwesomeIcon) {
       setShowYTModal(false);
     }
@@ -146,7 +145,7 @@ export function Main() {
               return (<Plan plan={plan} key={i} />)
             })}
           </div>
-          <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} />
+          <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`Follow up`} />
         </div>
       </div>
     )
@@ -154,19 +153,31 @@ export function Main() {
 
   if (version === 'firstQuestion') {
     return (
-      <div className="py-10 h-[90%]">
+      <div className="py-10 h-full flex justify-center flex-col items-start gap-10">
         <header>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
             <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">What are you wondering?</h1>
           </div>
         </header>
-        <main className='h-full'>
-          <div className="mx-auto max-w-7xl h-full">
+        <main className='w-full'>
+          <div className="mx-auto max-w-7xl my-10">
             <div className="w-full h-[70%] flex flex-col items-center justify-center">
               <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`} />
             </div>
           </div>
         </main>
+        <h2>Reset Canvas Token?</h2>
+        <footer className='w-full'>
+          <div className="w-full">
+            <div className="w-full h-[70%] flex flex-col items-center justify-center">
+              <CommentForm
+                sendNextQuestion={setCanvasToken}
+                placeholder={"Ex: 1234~1234~1234~1234"}
+                btnText={"Reset"}
+              />
+            </div>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -178,7 +189,7 @@ export function Main() {
         </div>
         : null}
       <header>
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
           <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">What is your Canvas Token</h1>
         </div>
       </header>
@@ -188,7 +199,6 @@ export function Main() {
             <CommentForm
               sendNextQuestion={setCanvasToken}
               placeholder={"Ex: 1234~1234~1234~1234"}
-              buttonText={"Submit"}
             />
           </div>
         </div>
@@ -209,7 +219,7 @@ export function Main() {
 }
 
 
-function CommentForm({ sendNextQuestion, placeholder, file, addFile }) {
+function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) {
   const [nextQuestion, setNextQuestion] = useState('');
   return (
     <div className="flex items-start space-x-4 w-[90%] md:w-[600px]">
@@ -249,7 +259,7 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile }) {
                 setNextQuestion('');
               }}
             >
-              Submit
+              {btnText ? btnText : 'Submit'}
             </button>
           </div>
         </div>
