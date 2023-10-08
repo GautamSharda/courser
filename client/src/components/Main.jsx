@@ -29,8 +29,8 @@ export function Main() {
   }
   const version = getVersion();
 
-  const file = (user && user.files) ? user.files : [];
-
+  const file = (user && user.personalFiles) ? user.personalFiles : [];
+ 
   const auth = async () => {
     const res = await isLoggedIn(constants.clientUrl, '/home');
     setIsLoading(false);

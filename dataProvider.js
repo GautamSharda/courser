@@ -8,6 +8,7 @@ const { Configuration, OpenAIApi } = require("openai");
 const File = require("./models/files");
 const PDFDocument = require('pdfkit');
 const User = require("./models/user");
+const mongoose = require('mongoose');
 
 
 
@@ -158,7 +159,21 @@ class DataProvider{
       };
 
     getPersonalFiles = async() => {
-      return {};
+      const user = await User.findById(this.userID);
+      const personalFileIDs = user.personalFiles;
+      console.log(personalFileIDs);
+      let personalFiles = [];
+      for (let i = 0; i < personalFileIDs.length; i++){
+        let id = mongoose.Types.ObjectId(personalFileIDs[i]);
+        console.log(id);
+        const personalFile = await File.findById(id);
+        personalFiles.push(personalFile);
+      }
+      // summarize the files
+      // put summary in file object" {id: "", name: "", type: "personal file", summary: ""};
+      // return array of these objects
+      // then grab buffer / raw text in getRawtext() called in for loop of /answers
+      return [];
     }
 
 }
