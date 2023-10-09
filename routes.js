@@ -169,7 +169,7 @@ postCanvasData = async (userID, canvasToken) => {
     let mongoPushRes = await User.findByIdAndUpdate(userID,{ $set: { classData: classJson } });
     console.log(`Result from enrollment data push:`)
     console.log(mongoPushRes);
-
+    console.log(classJson);
     // Iteratively request files for all classes
     for (let i = 0; i < classJson.length; i++) {
         try {
@@ -202,9 +202,17 @@ postCanvasData = async (userID, canvasToken) => {
                 }
 
                 // Push file metadata to DB
-                let mongoPushRes = await User.findByIdAndUpdate(userID,{ $push: { files: { $each: enrichedFiles } } });
-                console.log(`Result from fileData push for ${classJson[i].course_code}:`)
-                console.log(mongoPushRes);
+                let fileids = [];
+                for (let j = 0; j < enrichedFiles.length; j++){
+                    let currFile = enrichedFiles[j];
+                    currFile.owner = userID;
+                    delete currFile.id;
+                    const uploadedFile = await File.create(currFile);
+                    fileids.push(uploadedFile._id.toString());
+                    console.log(`Result from fileData push for ${classJson[i].course_code}:`)
+                    console.log(uploadedFile);
+                }
+                let mongoPushRes = await User.findByIdAndUpdate(userID,{ $push: { files: { $each: fileids } } });
             }
         } catch (error) {
             // Some classes don't have files, so we catch the error and continue
@@ -267,7 +275,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     // console.log(prompt);
 
     // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    const kMostRelevant = await getTopKRelevant(prompt, res.userProfile, 2); // Json array of file metadata
+    const kMostRelevant = await getTopKRelevant(prompt, res.userProfile, 1); // Json array of file metadata
     // for (file in kMostRelevant){
     //     const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
     //     if (file.rawText){
@@ -291,12 +299,14 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     let sources = [];
     console.log("kMostRelevantFiles", kMostRelevant);
     for (let i = 0; i < kMostRelevant.length; i++) {
-        const file = kMostRelevant[i];
+        const id = kMostRelevant[i];
         const dp = new DataProvider(res.userProfile._id.toString());
         // console.log(file.id);
-        let rawText = await dp.fetchRawTextOfFile(file.id); // ??
+        let rawText = await dp.fetchRawTextOfFile(id); // ??
         console.log(rawText + '\n');
+        try{
         sources.push(file.url);
+        }catch(e){}
         documents.push(new Document({ text: rawText }))
     }
 
@@ -335,15 +345,13 @@ getTopKRelevant = async (query, user, k) => {
     const personalFiles = await dataProvider.getPersonalFiles();
     // const collegeFiles = await dataProvider.getCollegeFiles();
     console.log('personalFiles', personalFiles);
-    process.exit();
     const allFiles = canvasFiles.concat(personalFiles);
     // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
-
+    console.log(allFiles);
     const proompter = new Proompter();
-    const topKIndices = await proompter.pickTopKFiles(allFiles, query, k);
-    let topKFiles = [];
-    topKIndices.forEach(index => topKFiles.push(allFiles[index]));
-    return topKFiles;
+    const topKIds = await proompter.pickTopKFiles(allFiles, query, k);
+    console.log(topKIds);
+    return topKIds;
 }
 
 

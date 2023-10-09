@@ -7,10 +7,13 @@ const fs = require('fs');
 const { Configuration, OpenAIApi } = require("openai");
 const File = require("./models/files");
 const PDFDocument = require('pdfkit');
+const pdf = require('pdf-parse');
+const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI } = require("llamaindex");
 const User = require("./models/user");
 const mongoose = require('mongoose');
+const { ObjectId } = require("mongodb");
 
-
+const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
 
 
 
@@ -22,24 +25,31 @@ class DataProvider{
     getCanvasFileMetadata = async (idd=false) => {
       const user = await User.findById(this.userID);
 
-      let combinedArray = user.files;
+      let ids = user.files;
+      let combinedArray = [];
+      for (let i = 0; i < ids.length; i++){
+        const file = await File.findById(ids[i]);
+        combinedArray.push(file);
+      }
       if (idd){
         // Include raw text
         combinedArray = combinedArray.map(({ id }) => ({ id, rawText }));
       }else{
-        combinedArray = combinedArray.map(({id, display_name, url, created_at, course_name, summary }) => ({id, display_name, url, created_at, course_name,summary }));
+        combinedArray = combinedArray.map(({_id, display_name, url, created_at, course_name, summary }) => ({_id, display_name, url, created_at, course_name,summary }));
       }
       
       return(combinedArray)
     }
 
     fetchRawTextOfFile = async(id) => {
-      const user = await User.findById(this.userID);
-      
-      let combinedArray = user.files;
-
-      let doc = combinedArray.find(item => String(item.id) === String(id));
-      return doc.rawText;
+      let objid = new ObjectId(id);
+      console.log(objid);
+      const file = await File.findById(objid);
+      if (file){
+        return file.rawText;
+      }
+      console.log('no file found');
+      return '';
     }
 
 
@@ -128,7 +138,36 @@ class DataProvider{
     }
 
     uploadFileToMongo = async (file) => {
-      const newFile = await File.create({buffer: Buffer.from(file.data), fileName: file.name});    
+      // get raw text, gen file summary
+      
+      let actualBuffer = Buffer.from(file.data);
+      let data = await pdf(actualBuffer);
+      console.log(data.text);
+
+      let document = new Document({ text: data.text });
+
+      // Specify LLM model
+      const serviceContext = serviceContextFromDefaults({
+          llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
+      });
+  
+      // Indexing 
+      let startTime = Date.now();
+      const index = await SummaryIndex.fromDocuments([document], {serviceContext}); // LlamaIndex embedding
+      // let index = await fetchEmbedding(document.text); // Openai embedding
+      let endTime = Date.now();
+      // console.log("Indexing took " + (endTime - startTime) + " milliseconds");
+  
+      // Query the index
+      startTime = Date.now();
+      const queryEngine = index.asQueryEngine();
+      const response = await queryEngine.query(
+          summaryPrompt,
+      );
+      endTime = Date.now();
+      // console.log("Query took " + (endTime - startTime) + " milliseconds");
+    
+      const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text});    
       return newFile;
     }
     createPdfFromMongoId = async (fileId, outputPath) => {
@@ -166,14 +205,13 @@ class DataProvider{
       for (let i = 0; i < personalFileIDs.length; i++){
         let id = mongoose.Types.ObjectId(personalFileIDs[i]);
         console.log(id);
-        const personalFile = await File.findById(id);
+        const personalFileDoc = await File.findById(id);
+        const personalFile = personalFileDoc.toObject();
+        delete personalFile.buffer;
+        delete personalFile.rawText;
         personalFiles.push(personalFile);
       }
-      // summarize the files
-      // put summary in file object" {id: "", name: "", type: "personal file", summary: ""};
-      // return array of these objects
-      // then grab buffer / raw text in getRawtext() called in for loop of /answers
-      return [];
+      return personalFiles;
     }
 
 }
