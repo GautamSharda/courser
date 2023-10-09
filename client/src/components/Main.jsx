@@ -82,8 +82,8 @@ export function Main() {
     });
     const res = await response.json();
     // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
-    addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom);
-    // addMessage([{ "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom); Use this line for testing outside openai
+    typeof res==="string" ? addMessage([{ ...nxtValue }, { "type": "human", "text": res }], scrollToBottom) : addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom)
+    // addM essage([{ "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom); Use this line for testing outside openai
   }
 
   const handleFileUpload = async (e) => {

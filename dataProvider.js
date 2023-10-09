@@ -12,6 +12,7 @@ const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, Op
 const User = require("./models/user");
 const mongoose = require('mongoose');
 const { ObjectId } = require("mongodb");
+const { firestore } = require("firebase-admin");
 
 const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
 
@@ -28,7 +29,10 @@ class DataProvider{
       let ids = user.files;
       let combinedArray = [];
       for (let i = 0; i < ids.length; i++){
-        const file = await File.findById(ids[i]);
+        const id = ids[i];
+        const fileDoc = await File.findById(id);
+        const file = fileDoc.toObject();
+        file._id = String(id);
         combinedArray.push(file);
       }
       if (idd){
@@ -49,6 +53,17 @@ class DataProvider{
         return file.rawText;
       }
       console.log('no file found');
+      return '';
+    }
+
+    fetchURL = async(id) => {
+      let objid = new ObjectId(id);
+      console.log(objid);
+      const file = await File.findById(objid);
+      if (file){
+        return file.url ? file.url : file.display_name;
+      }
+      console.log('no file');
       return '';
     }
 
@@ -167,7 +182,7 @@ class DataProvider{
       endTime = Date.now();
       // console.log("Query took " + (endTime - startTime) + " milliseconds");
     
-      const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text});    
+      const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text, owner: this.userID});    
       return newFile;
     }
     createPdfFromMongoId = async (fileId, outputPath) => {
@@ -209,6 +224,9 @@ class DataProvider{
         const personalFile = personalFileDoc.toObject();
         delete personalFile.buffer;
         delete personalFile.rawText;
+        delete personalFile.owner;
+        delete personalFile.display_name;
+        personalFile._id = String(id);
         personalFiles.push(personalFile);
       }
       return personalFiles;

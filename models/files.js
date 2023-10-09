@@ -41,6 +41,11 @@ const FileSchema = new Schema({
     rawText: {
       type: String,
       required: true
+    },
+
+    owner: {
+      type: String,
+      required: true
     }
   
   },

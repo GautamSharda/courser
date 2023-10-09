@@ -20,6 +20,7 @@ const axios = require('axios');
 const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
 const fsNormal = require('fs');
+const { ObjectId } = require("mongodb");
 
 Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
     const { canvasToken } = req.body;
@@ -106,43 +107,46 @@ async function processFile(fileUrl, metadata) {
  * @param {*} course this is the course object
  * @returns a promise that resolves to an array of files enriched with summary and raw text
  */
-async function processFilesBatch(filesBatch, course) {
-    return Promise.all(filesBatch.map(async file => {
-        if (file['content-type'] == "application/pdf") { // Only process PDFs
-            file.course_code = course.course_code;
-            file.course_name = course.name;
+ async function processFilesBatch(filesBatch, course) {
+    //  console.log('FBH', filesBatch.length);
+    // Filter out non-PDF files
+    const pdfFiles = filesBatch.filter(file => file['content-type'] === "application/pdf");
 
-            try {
-                const [summary, rawText] = await processFile(file.url, { fileName: file.display_name, created_at: file.created_at });
-                if (summary.length > 0 && rawText.length > 0) {
-                    console.log(file.filename + " summary and raw text ✅")
-                    file.summary = summary;
-                    file.rawText = rawText;
-                } else {
-                    console.log(file.filename + " summary and raw text ❌")
-                }
-            } catch (error) {
-                console.log("❌Error❌ with processing file " + file.filename);
+    // console.log('PDF', pdfFiles.length);
+    // Use Promise.all to process all the PDF files in parallel
+    const processedFilesPromises = pdfFiles.map(async file => {
+        file.course_code = course.course_code;
+        file.course_name = course.name;
+
+        try {
+            const [summary, rawText] = await processFile(file.url, { fileName: file.display_name, created_at: file.created_at });
+            if (summary.length > 0 && rawText.length > 0) {
+                console.log(file.filename + " summary and raw text ✅");
+                file.summary = summary;
+                file.rawText = rawText;
+            } else {
+                console.log(file.filename + " summary and raw text ❌");
             }
+        } catch (error) {
+            console.log("❌Error❌ with processing file " + file.filename);
         }
         return file;
-    }));
-}
+    });
 
+    const processedFiles = await Promise.all(processedFilesPromises);
+    return processedFiles;
+}
 /** 
  * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
  * Owner: Ilya 
  */
-postCanvasData = async (userID, canvasToken) => {
-    // fsNormal.writeFileSync("./canvastoken.txt", canvasToken)
-    const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
+ async function postCanvasData(userID, canvasToken) {
+    const currentTerm = "Fall23"; // This is the term that we're currently in
 
     let startTime = Date.now();
-    // Connect to MongoDB
 
-    // Clear existing files, since were repulling them
     await User.findByIdAndUpdate(userID, { $set: { files: [] } }, { new: true });
-    // Step 1: Pull classes from Canvas API
+
     var myHeaders = new Headers();
     myHeaders.append("Authorization", `Bearer ${canvasToken}`);
     var requestOptions = {
@@ -154,71 +158,53 @@ postCanvasData = async (userID, canvasToken) => {
     const classDataResponse = await fetch("https://canvas.instructure.com/api/v1/courses?per_page=1000", requestOptions);
     let jsonStr = await classDataResponse.text();
     const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
-
     let classJson = JSON.parse(modifiedStr);
 
     if (classDataResponse.status != 200) {
         console.log(`Canvas enrollment data call ❌ ${classDataResponse.status}-${classDataResponse.statusText}`);
         return;
-    }
-    else {
+    } else {
         console.log(`Canvas enrollment data call: 200 ✅`);
     }
 
-    // Push classJson to user's DB because we're data collection sluts
-    let mongoPushRes = await User.findByIdAndUpdate(userID,{ $set: { classData: classJson } });
-    console.log(`Result from enrollment data push:`)
-    console.log(mongoPushRes);
-    console.log(classJson);
-    // Iteratively request files for all classes
-    for (let i = 0; i < classJson.length; i++) {
-        try {
-            if (classJson[i].course_code.includes(currentTerm)) { // Important to catch only current classes, not past ones
-                // Make get request
-                let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/files`
-                let fileDataResponse = await fetch(filesUrl, requestOptions);
-                let filesRes = JSON.parse(await fileDataResponse.text());
-                if (fileDataResponse.status != 200) {
-                    continue;
-                } else {
-                    console.log(`✅ Canvas API call successful: 200-OK`);
-                }
-                console.log("Pulling content for " + classJson[i].course_code);
+    await User.findByIdAndUpdate(userID, { $set: { classData: classJson } });
 
-                // Add classId to each obj
-                filesRes = filesRes.map(file => ({
-                    ...file,
-                    classID: classJson[i].id
-                }));
-
-                // Enrich our metadata with summary and raw text 
-                // MULTI THREADING
-                const BATCH_SIZE = 5;
-                let enrichedFiles = [];
-                for (let j = 0; j < filesRes.length; j += BATCH_SIZE) {
-                    const filesBatch = filesRes.slice(j, j + BATCH_SIZE);
-                    await processFilesBatch(filesBatch, classJson[i]);
-                    enrichedFiles = enrichedFiles.concat(filesBatch);
-                }
-
-                // Push file metadata to DB
-                let fileids = [];
-                for (let j = 0; j < enrichedFiles.length; j++){
-                    let currFile = enrichedFiles[j];
-                    currFile.owner = userID;
-                    delete currFile.id;
-                    const uploadedFile = await File.create(currFile);
-                    fileids.push(uploadedFile._id.toString());
-                    console.log(`Result from fileData push for ${classJson[i].course_code}:`)
-                    console.log(uploadedFile);
-                }
-                let mongoPushRes = await User.findByIdAndUpdate(userID,{ $push: { files: { $each: fileids } } });
+    const classProcessingPromises = classJson.map(async classItem => {
+        try{
+        if (classItem.course_code.includes(currentTerm)) {
+            let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classItem.id}/files?per_page=1000`;
+            let fileDataResponse = await fetch(filesUrl, requestOptions);
+            let filesRes = JSON.parse(await fileDataResponse.text());
+            
+            if (fileDataResponse.status != 200) {
+                return;
             }
-        } catch (error) {
-            // Some classes don't have files, so we catch the error and continue
-            console.log("Error with pulling files for class" + classJson[i].id + `[${classJson[i].course_code}]`)
+
+            console.log("Pulling content for " + classItem.course_code);
+            // console.log("filesRes", JSON.stringify(filesRes, null, 2));
+            
+            // Process and enrich the files
+            const processedFiles = await processFilesBatch(filesRes, classItem);
+            // console.log('enrichedFiles', processedFiles);
+
+            // Push file metadata to DB
+            for (let j = 0; j < processedFiles.length; j++) {
+                let currFile = processedFiles[j];
+                currFile.owner = userID;
+                delete currFile.id;
+                const uploadedFile = await File.create(currFile);
+                const fileid = uploadedFile._id.toString();
+                await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
+                // console.log('uploaded file', uploadedFile);
+                // console.log('with this id', uploadedFile._id);
+            }
         }
-    }
+    }catch(e){console.log("error processing class", e);}
+    });
+
+    // Wait for all classes to be processed
+    await Promise.all(classProcessingPromises);
+
     let endTime = Date.now();
     console.log("Total time: " + (endTime - startTime) + " milliseconds");
     return;
@@ -303,9 +289,10 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
         const dp = new DataProvider(res.userProfile._id.toString());
         // console.log(file.id);
         let rawText = await dp.fetchRawTextOfFile(id); // ??
-        console.log(rawText + '\n');
+        // console.log(rawText + '\n');
         try{
-        sources.push(file.url);
+            const source = await dp.fetchURL(id);
+            sources.push(source);
         }catch(e){}
         documents.push(new Document({ text: rawText }))
     }
@@ -324,17 +311,18 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     );
 
     const answer = response.toString();
-    console.log(`FINAL ANSWER: ${answer}.\n`);
+    let finalAnswer = answer;
     for (let i = 0; i < sources.length; i++){
-        console.log( `Source ${i+1}=${sources}\n`);
+        // console.log( `Source ${i+1}=${sources}\n`);
+        finalAnswer += ` Source ${i+1}=${sources}\n`;
     }
-
+    console.log('FINAL ANSWER ', finalAnswer);
     const foundUser = await User.findById(res.userProfile._id.toString());
     foundUser.questions.push(prompt);
     foundUser.responses.push(answer);
     await foundUser.save();
 
-    res.json(foundUser);
+    res.json(finalAnswer);
 }));
 
 getTopKRelevant = async (query, user, k) => {
@@ -344,10 +332,10 @@ getTopKRelevant = async (query, user, k) => {
     // console.log('canvasFiles', canvasFiles);
     const personalFiles = await dataProvider.getPersonalFiles();
     // const collegeFiles = await dataProvider.getCollegeFiles();
-    console.log('personalFiles', personalFiles);
+    // console.log('personalFiles', personalFiles);
     const allFiles = canvasFiles.concat(personalFiles);
     // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
-    console.log(allFiles);
+    console.log(allFiles.length);
     const proompter = new Proompter();
     const topKIds = await proompter.pickTopKFiles(allFiles, query, k);
     console.log(topKIds);
