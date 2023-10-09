@@ -159,7 +159,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
                     id: assignment.id,
                     points_possible: assignment.points_possible,
                     created_at: assignment.created_at,
-                    course_id: assignment.course_id,
+                    course_id: String(assignment.course_id),
                     display_name: assignment.name,
                     due_at: assignment.due_at,
                     has_submitted_submissions: assignment.has_submitted_submissions,
