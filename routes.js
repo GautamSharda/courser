@@ -244,7 +244,9 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
         if (classItem.course_code && classItem.course_code.includes(currentTerm)) {
             let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classItem.id}/files?per_page=1000`;
             let fileDataResponse = await fetch(filesUrl, requestOptions);
-            let filesRes = JSON.parse(await fileDataResponse.text());
+            let jsonStr = await fileDataResponse.text();
+            let modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+            let filesRes = JSON.parse(modifiedStr);
             
             if (fileDataResponse.status != 200) {
                 return;
@@ -262,6 +264,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
                 let currFile = processedFiles[j];
                 if (currFile.created_at.startsWith("2023")){
                     currFile.owner = userID;
+                    currFile.preview_url = `https://uiowa.instructure.com/courses/${classItem.id.slice(-6)}/files?preview=${currFile.id}`
                     delete currFile.id;
                     const uploadedFile = await File.create(currFile);
                     const fileid = uploadedFile._id.toString();
@@ -333,7 +336,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     // console.log(prompt);
 
     // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    const kMostRelevant = await getTopKRelevant(prompt, res.userProfile, 1); // Json array of file metadata
+    const kMostRelevant = await getTopKRelevant(prompt, res.userProfile, process.env.KFILES); // Json array of file metadata
     // for (file in kMostRelevant){
     //     const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
     //     if (file.rawText){

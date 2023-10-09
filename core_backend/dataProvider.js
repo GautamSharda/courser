@@ -83,7 +83,7 @@ class DataProvider{
       console.log(objid);
       const file = await File.findById(objid);
       if (file){
-        return file.url ? file.url : file.display_name;
+        return file.preview_url ? file.preview_url : file.display_name;
       }
       console.log('no file');
       return '';
