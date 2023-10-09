@@ -107,6 +107,24 @@ export function Main() {
     setUser({ ...user, files: [...file, ...resFiles] });
   }
 
+  // =====> Function to delete files <======
+  // const deleteFile = async (file) => {
+  //   setIsLoading(true);
+  //   const data = new FormData();
+  //   data.append('file', file);
+  //   const response = await fetch(`${constants.url}/delete`, {
+  //     method: 'POST',
+  //     body: data,
+  //     headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
+
+  //   });
+  //   const res = await response.json();
+  //   console.log(res);
+  //   setIsLoading(false);
+  //   const resFiles = res.files ? res.files : [];
+  //   setUser({ ...user, files: [...file, ...resFiles] });
+  // }
+
   const toggleYTModal = (e) => {
     e.stopPropagation();
     setShowYTModal(!showYTModal);
@@ -166,18 +184,6 @@ export function Main() {
             </div>
           </div>
         </main>
-        <h2>Reset Canvas Token?</h2>
-        <footer className='w-full'>
-          <div className="w-full">
-            <div className="w-full h-[70%] flex flex-col items-center justify-center">
-              <CommentForm
-                sendNextQuestion={setCanvasToken}
-                placeholder={"Ex: 1234~1234~1234~1234"}
-                btnText={"Reset"}
-              />
-            </div>
-          </div>
-        </footer>
       </div>
     );
   }
@@ -245,11 +251,11 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) 
                     <input id="fileInput" type="file" className="sr-only" onChange={addFile} multiple />
                   </label>
                 </div>
-                {file.length > 0 && (
-                  <div className="flow-root">
-                    <Dropdown files={file} text={'Your Files'} />
-                  </div>
-                )}
+
+                <div className="flow-root">
+                  <Dropdown files={file} text={'Your Files'} />
+                </div>
+
               </div>
             )}
             <button
