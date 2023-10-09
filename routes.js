@@ -228,8 +228,8 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
         const fileIds = [];
         for (const myfile of files) {
             const fileNameNoDot = myfile.name.split('.')[0];
-            const filePath = path.join(__dirname, 'userFiles', fileNameNoDot + myfile.md5 + '.pdf');
-            await myfile.mv(filePath);
+            // const filePath = path.join(__dirname, 'userFiles', fileNameNoDot + myfile.md5 + '.pdf');
+            // await myfile.mv(filePath);
             const dp = new DataProvider(res.userProfile._id.toString());
             const uploadedFile = await dp.uploadFileToMongo(myfile);
             mongoFiles.push({name: uploadedFile.fileName, id: uploadedFile._id.toString()});
