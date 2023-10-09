@@ -184,18 +184,6 @@ export function Main() {
             </div>
           </div>
         </main>
-        <h2>Reset Canvas Token?</h2>
-        <footer className='w-full'>
-          <div className="w-full">
-            <div className="w-full h-[70%] flex flex-col items-center justify-center">
-              <CommentForm
-                sendNextQuestion={setCanvasToken}
-                placeholder={"Ex: 1234~1234~1234~1234"}
-                btnText={"Reset"}
-              />
-            </div>
-          </div>
-        </footer>
       </div>
     );
   }
