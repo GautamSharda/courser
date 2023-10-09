@@ -107,6 +107,24 @@ export function Main() {
     setUser({ ...user, files: [...file, ...resFiles] });
   }
 
+  // =====> Function to delete files <======
+  // const deleteFile = async (file) => {
+  //   setIsLoading(true);
+  //   const data = new FormData();
+  //   data.append('file', file);
+  //   const response = await fetch(`${constants.url}/delete`, {
+  //     method: 'POST',
+  //     body: data,
+  //     headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
+
+  //   });
+  //   const res = await response.json();
+  //   console.log(res);
+  //   setIsLoading(false);
+  //   const resFiles = res.files ? res.files : [];
+  //   setUser({ ...user, files: [...file, ...resFiles] });
+  // }
+
   const toggleYTModal = (e) => {
     e.stopPropagation();
     setShowYTModal(!showYTModal);
@@ -245,11 +263,11 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) 
                     <input id="fileInput" type="file" className="sr-only" onChange={addFile} multiple />
                   </label>
                 </div>
-                {file.length > 0 && (
-                  <div className="flow-root">
-                    <Dropdown files={file} text={'Your Files'} />
-                  </div>
-                )}
+
+                <div className="flow-root">
+                  <Dropdown files={file} text={'Your Files'} />
+                </div>
+
               </div>
             )}
             <button
