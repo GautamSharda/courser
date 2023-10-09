@@ -28,7 +28,6 @@ const isLoggedIn = async (req, res, next) => {
             console.log('2')
             return res.status(401).send(JSON.stringify("no user found"));
         }
-        console.log(foundUser);
         res.userProfile = foundUser;
     } catch (er) {
         console.log('3')

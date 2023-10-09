@@ -31,14 +31,14 @@ Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
 }));
 
 Routes.get("/home", isLoggedIn, asyncMiddleware(async (req, res) => {
-    const fileIds = res.userProfile.files;
+    const fileIds = res.userProfile.personalFiles;
     const files = [];
-    // for (const fileId of fileIds) {
-    //     //get only the field fileName from the file object
-    //     const fileName = await File.findById(fileId).select('fileName');
-    //     files.push({name: fileName.fileName, id: fileId});
-    // }
-    // res.userProfile.files = files;
+    for (const fileId of fileIds) {
+        //get only the field fileName from the file object
+        const fileName = await File.findById(fileId).select('fileName');
+        files.push({name: fileName.fileName, id: fileId});
+    }
+    res.userProfile.personalFiles = files;
     // if (files.length === 0 && res.userProfile.canvasToken){
     //     postCanvasData(res.userProfile._id.toString(), res.userProfile.canvasToken);
     // }
@@ -237,9 +237,8 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
             //const writePdf = await dp.createPdfFromMongoId(uploadedFile._id.toString(), 'data');
         }
         const foundUser = await User.findById(res.userProfile._id);
-        foundUser.files = foundUser.files.concat(fileIds);
+        foundUser.personalFiles = foundUser.personalFiles.concat(fileIds);
         await foundUser.save();
-        console.log(foundUser);
         res.json({files: mongoFiles});
     } catch (error) {
         console.error('Error processing file:', error);
@@ -335,8 +334,9 @@ getTopKRelevant = async (query, user, k) => {
     // console.log('canvasFiles', canvasFiles);
     const personalFiles = await dataProvider.getPersonalFiles();
     // const collegeFiles = await dataProvider.getCollegeFiles();
-
-    const allFiles = canvasFiles;
+    console.log('personalFiles', personalFiles);
+    process.exit();
+    const allFiles = canvasFiles.concat(personalFiles);
     // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
 
     const proompter = new Proompter();
