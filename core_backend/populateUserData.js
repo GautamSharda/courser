@@ -1,3 +1,7 @@
+/**
+ * This file's responsibilty is to get all the files from Canvas API and populate the user's DB with them.
+ */
+
 if (process.env.NODE_ENV !== "production") {
     require("dotenv").config();
 }
@@ -6,7 +10,7 @@ const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, Op
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const fs = require('fs');
-const User = require("./models/user");
+const User = require("../models/user");
 
 const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
 const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
@@ -23,7 +27,8 @@ async function processFile(fileUrl, metadata) {
     let axiosResponse = await axios({
         url: fileUrl,
         method: 'GET',
-        responseType: 'arraybuffer',  // Important
+        responseType: 'arraybuffer',  // Important,
+        timeout:3000
     });
     let endTime = Date.now();
     // console.log("Requesting file took " + (endTime - startTime) + " milliseconds");
@@ -162,7 +167,7 @@ async function populateUserFiles(canvas_key){
                 } */
 
                 // MULTI THREADING
-                const BATCH_SIZE = 5;
+                const BATCH_SIZE = 10;
                 let enrichedFiles = [];
                 for (let j = 0; j < filesRes.length; j += BATCH_SIZE) {
                     const filesBatch = filesRes.slice(j, j + BATCH_SIZE);
@@ -180,7 +185,8 @@ async function populateUserFiles(canvas_key){
             }
         } catch (error) {
             // Some classes don't have files, so we catch the error and continue
-            console.log("Error with pulling files for class" + classJson[i].id + `[${classJson[i].course_code}]`)
+            console.log(error)
+            console.log("Error with pulling files for class " + classJson[i].id + ` [course_code: ${classJson[i].course_code}]`)
         }
     }
     let endTime = Date.now();

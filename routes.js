@@ -8,12 +8,12 @@ const fs = require("fs/promises");
 const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI, SimpleDirectoryReader } = require("llamaindex");
 const Canvas = require("./classes/Canvas");
 const { Configuration, OpenAIApi } = require("openai");
-const Proompter = require("./proompter");
+const Proompter = require("./core_backend/proompter");
 const path = require('path');
 const File = require("./models/files");
 const { isLoggedIn, asyncMiddleware, randomStringToHash24Bits } = require("./middleware");
 const jwt = require("jsonwebtoken");
-const DataProvider = require("./dataprovider");
+const DataProvider = require("./core_backend/dataProvider");
 const Headers = require("node-fetch").Headers;
 const fetch = require("node-fetch");
 const axios = require('axios');
@@ -21,6 +21,10 @@ const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
 const fsNormal = require('fs');
 const { ObjectId } = require("mongodb");
+
+// Important constants
+const currentTerm = "Fall23"; // This is the term that we're currently in
+
 
 Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
     const { canvasToken } = req.body;
@@ -136,12 +140,47 @@ async function processFile(fileUrl, metadata) {
     const processedFiles = await Promise.all(processedFilesPromises);
     return processedFiles;
 }
+
+async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions){
+    // Pull users assignments
+    // console.log(classJson)
+    for(i in classJson){
+        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
+            console.log("Pulling assignments for " + classJson[i].course_code)
+            const res = await fetch(`https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/assignments`, requestOptions);
+            const jsonStr = await res.text();
+            const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+            let assignments = JSON.parse(modifiedStr);
+
+            filesArray = [];
+            for (assignment of assignments){
+                const file = {
+                    owner: userID,
+                    id: assignment.id,
+                    points_possible: assignment.points_possible,
+                    created_at: assignment.created_at,
+                    course_id: assignment.course_id,
+                    display_name: assignment.name,
+                    due_at: assignment.due_at,
+                    has_submitted_submissions: assignment.has_submitted_submissions,
+                    rawText: assignment.description ? assignment.description : 'null',
+                    summary: `{Assignment Name=${assignment.name}} for {Course Name = ${classJson[i].name}}. It is due on ${assignment.due_at} and is worth {${assignment.points_possible}} points.`,
+                    type: "assignment"
+                }
+                const uploadedFile = await File.create(file);
+                const fileID = uploadedFile._id.toString();
+                await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+            }
+        }
+    }
+}
+
 /** 
  * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
  * Owner: Ilya 
  */
  async function postCanvasData(userID, canvasToken) {
-    const currentTerm = "Fall23"; // This is the term that we're currently in
+    
 
     let startTime = Date.now();
 
@@ -167,11 +206,14 @@ async function processFile(fileUrl, metadata) {
         console.log(`Canvas enrollment data call: 200 ✅`);
     }
 
-    await User.findByIdAndUpdate(userID, { $set: { classData: classJson } });
+    await User.findByIdAndUpdate(userID, { $set: { classJson: classJson } });
+    
+    // Pull users assignments
+    await pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions);
 
     const classProcessingPromises = classJson.map(async classItem => {
         try{
-        if (classItem.course_code.includes(currentTerm)) {
+        if (classItem.course_code && classItem.course_code.includes(currentTerm)) {
             let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classItem.id}/files?per_page=1000`;
             let fileDataResponse = await fetch(filesUrl, requestOptions);
             let filesRes = JSON.parse(await fileDataResponse.text());

@@ -8,6 +8,7 @@ const UserSchema = new Schema({
     personalFiles: { type: Array, default: [] },
     questions : { type: [String], default: [] },
     responses : { type: [String], default: [] },
+    classJson: { type: Array, default: [] },
 });
 
 module.exports = mongoose.model('User', UserSchema)

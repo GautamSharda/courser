@@ -5,11 +5,11 @@ if (process.env.NODE_ENV !== "production") {
 
 const fs = require('fs');
 const { Configuration, OpenAIApi } = require("openai");
-const File = require("./models/files");
+const File = require("../models/files");
 const PDFDocument = require('pdfkit');
 const pdf = require('pdf-parse');
 const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI } = require("llamaindex");
-const User = require("./models/user");
+const User = require("../models/user");
 const mongoose = require('mongoose');
 const { ObjectId } = require("mongodb");
 const { firestore } = require("firebase-admin");

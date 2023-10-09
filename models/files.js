@@ -46,8 +46,11 @@ const FileSchema = new Schema({
     owner: {
       type: String,
       required: true
+    },
+    type: {
+      type: String,
+      required: false
     }
-  
   },
   {
     bufferCommands: true, // enable buffer storage,

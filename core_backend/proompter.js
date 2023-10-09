@@ -1,3 +1,7 @@
+/**
+ * This file is responsible for generating the top K files for a given query.
+ */
+
 const { Configuration, OpenAIApi } = require("openai");
 class Proompter {
       constructor() {
