@@ -179,7 +179,7 @@ export function Main() {
         : null}
       <header>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">What is your Canvas Token</h1>
+          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">Enter Your Canvas Token</h1>
         </div>
       </header>
       <main className='h-full'>
@@ -187,7 +187,7 @@ export function Main() {
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm
               sendNextQuestion={setCanvasToken}
-              placeholder={"Ex: 1234~1234~1234~1234"}
+              placeholder={"Ex: 4298~mo..."}
               buttonText={"Submit"}
             />
           </div>
