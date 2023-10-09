@@ -56,6 +56,28 @@ class DataProvider{
       return '';
     }
 
+    fetchSummary = async(id) => {
+      let objid = new ObjectId(id);
+      console.log(objid);
+      const file = await File.findById(objid);
+      if (file){
+        return file.summary;
+      }
+      console.log('no file found');
+      return '';
+    }
+
+    fetchTitle = async(id) => {
+      let objid = new ObjectId(id);
+      console.log(objid);
+      const file = await File.findById(objid);
+      if (file){
+        return file.display_name;
+      }
+      console.log('no file found');
+      return '';
+    }
+
     fetchURL = async(id) => {
       let objid = new ObjectId(id);
       console.log(objid);
