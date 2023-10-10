@@ -141,9 +141,9 @@ async function processFile(fileUrl, metadata) {
     return processedFiles;
 }
 
+// Pull users assignments + create due date file
 async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions){
-    // Pull users assignments
-    // console.log(classJson)
+    assignmentsArray = [];
     for(i in classJson){
         if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
             console.log("Pulling assignments for " + classJson[i].course_code)
@@ -152,7 +152,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
             const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
             let assignments = JSON.parse(modifiedStr);
 
-            filesArray = [];
+            // Pull assignments for each class and push to DB
             for (assignment of assignments){
                 const file = {
                     owner: userID,
@@ -162,21 +162,57 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
                     course_id: String(assignment.course_id),
                     display_name: assignment.name,
                     due_at: assignment.due_at,
+                    course_code: classJson[i].course_code,
                     has_submitted_submissions: assignment.has_submitted_submissions,
                     rawText: assignment.description ? assignment.description : 'null',
                     summary: `{Assignment Name=${assignment.name}} for {Course Name = ${classJson[i].name}}. It is due on ${assignment.due_at} and is worth {${assignment.points_possible}} points.`,
                     type: "assignment"
                 }
+                assignmentsArray.push(file);
                 const uploadedFile = await File.create(file);
                 const fileID = uploadedFile._id.toString();
                 await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
             }
         }
     }
+
+    //Filter down the assignments to the ones that are due in 14 days
+    const today = new Date();
+    const fourteenDays = new Date(today.getTime() + (14 * 24 * 60 * 60 * 1000));
+    //make sure its between today and 14 days from now
+    console.log(assignmentsArray)
+    const filteredFilesArray = assignmentsArray.filter(file => file.due_at && new Date(file.due_at) < fourteenDays && new Date(file.due_at) > today);
+    console.log(filteredFilesArray)
+    //Now exclude everything except assignment1Name, and dueDate
+    const filteredFilesArray2 = filteredFilesArray.map(file => {
+        return {
+            assignmentName: file.display_name,
+            course_code: file.course_code,
+            dueDate: file.due_at
+        }
+    });
+    console.log(filteredFilesArray2)
+    const dueDateFileRawText = filteredFilesArray2.map(assignment => 
+        `${assignment.course_code} - ${assignment.assignmentName} - due on ${assignment.dueDate}`
+    ).join('\n');
+    console.log(dueDateFileRawText)
+
+    
+    // Create due date file
+    const dueDateFile = {
+        owner: userID,
+        summary: `This file contains all assignments due in the next week (14 days) and their due dates. It should be used to answer queries like what are all the assignments I have due this week? When is X assignment due? Make me a to do list of all my assignments next week`,
+        rawText: dueDateFileRawText,
+        type: "Upcoming assignments",
+        display_name: "Upcoming assignments",
+    }
+    const uploadedFile = await File.create(dueDateFile);
+    const fileID = uploadedFile._id.toString();
+    await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
 }
 
 /** 
- * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
+ * This function pulls all the files + assignments from Canvas and stores them in the DB
  * Owner: Ilya 
  */
  async function postCanvasData(userID, canvasToken) {
@@ -209,6 +245,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     await User.findByIdAndUpdate(userID, { $set: { classJson: classJson } });
     
     // Pull users assignments
+    // TODO: Parallize this, its rather slow
     await pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions);
 
     const classProcessingPromises = classJson.map(async classItem => {
