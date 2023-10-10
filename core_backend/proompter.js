@@ -3,6 +3,8 @@
  */
 
 const { Configuration, OpenAIApi } = require("openai");
+const { Pinecone } =  require("@pinecone-database/pinecone");
+
 class Proompter {
       constructor() {
             const configuration = new Configuration({
@@ -11,24 +13,66 @@ class Proompter {
             this.openai = new OpenAIApi(configuration);
       }
 
-      pickTopKFiles = async (files, query, k) => {
-            console.log('hit picker');
-            const prompt = `fileObjects=${JSON.stringify(files)}, questionString=${query}, k=${k}`;
-            topKInstructions.push({ "role": "user", "content": prompt });
-            const completion = await this.openai.createChatCompletion({
-                  model: 'gpt-3.5-turbo-16k',
-                  temperature: 0,
-                  messages: topKInstructions
-            });
-            const remaining = completion.data.choices[0].message.content;
-            console.log('picked ids', remaining);
-            try {
-            return JSON.parse(remaining);
-            }catch(e){
-                  console.log('picker error', e);
+      getQueryEmbedding = async(query) => {
+          const url = 'https://api.openai.com/v1/embeddings';
+          const data = {
+              input: query,
+              model: "text-embedding-ada-002"
             };
-            return [];
-      }
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const jsonData = await response.json();
+            console.log(jsonData);
+            return jsonData;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+        }
+      
+      pickTopKFiles = async (files, query, k, userid) => {
+        const queryEmbedding = await this.getQueryEmbedding(query);
+        const pinecone = new Pinecone();      
+        const index = pinecone.Index(userid);
+        const pineres = await index.query({ topK: 3, vector: queryEmbedding.data[0].embedding});
+        const matches = pineres.matches;
+        let topKIds = [];
+        for (let i = 0; i < matches.length; i++){
+            topKIds.push(matches[i].id);
+        }
+        console.log(topKIds);
+        return topKIds;
+
+        // previous search
+        console.log('hit picker');
+        const prompt = `fileObjects=${JSON.stringify(files)}, questionString=${query}, k=${k}`;
+        topKInstructions.push({ "role": "user", "content": prompt });
+        const completion = await this.openai.createChatCompletion({
+                model: 'gpt-3.5-turbo-16k',
+                temperature: 0,
+                messages: topKInstructions
+        });
+        const remaining = completion.data.choices[0].message.content;
+        console.log('picked ids', remaining);
+        try {
+        return JSON.parse(remaining);
+        }catch(e){
+                console.log('picker error', e);
+        };
+        return [];
+    }
 }
 
 let topKInstructions = [

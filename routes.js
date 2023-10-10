@@ -21,6 +21,7 @@ const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
 const fsNormal = require('fs');
 const { ObjectId } = require("mongodb");
+const { Pinecone } =  require("@pinecone-database/pinecone");
 
 // Important constants
 const currentTerm = "Fall23"; // This is the term that we're currently in
@@ -140,7 +141,16 @@ async function processFile(fileUrl, metadata) {
     const processedFiles = await Promise.all(processedFilesPromises);
     return processedFiles;
 }
-async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions){
+async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions, index){
+    let allAnnouncementsFile = 
+    {owner: userID, 
+    display_name: "AllRecentAnnouncements", 
+    summary: `This file contains all the announcements made across all courses in the past 7 days. 
+    It could be used to answer queries like what are my most recent announcements? Any new announcements made in X class? 
+    What are all the announcements made this week? Give me a summary of my recent announcements.`,
+    rawText: ""};
+    let records = [];
+    let rawTextLines = [];
     for (i in classJson){
         if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
             console.log("Pulling announcements for " + classJson[i].course_code)
@@ -153,24 +163,58 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
                 const file = {
                     owner: userID,
                     id: announcement.id,
-                    created_at: assignment.posted_at,
+                    created_at: announcement.posted_at,
                     course_id: String(classJson[i].id),
                     display_name: announcement.title,
                     rawText: announcement.message ? announcement.message : 'null',
-                    summary: `{This file is an announcement for ${classJson[i].name} class titled ${announcement.title}}. It was made on ${assignment.posted_at}`,
+                    summary: `{This file is an announcement for ${classJson[i].name} class titled ${announcement.title}}. It was made on ${announcement.posted_at}`,
                     type: "announcement"
                 }
+
+                try{
+                const createdAtDate = new Date(file.created_at);
+
+                // Get the current date
+                const currentDate = new Date();
+
+                // Subtract 7 days from the current date to get the start of the 7-day window
+                const sevenDaysAgo = new Date(currentDate);
+                sevenDaysAgo.setDate(currentDate.getDate() - 7);
+
+                // Check if the createdAtDate is within the last 7 days
+                if (createdAtDate >= sevenDaysAgo && createdAtDate <= currentDate) {
+                    rawTextLines.push(JSON.stringify(file) + "\n");
+                }
+            }catch(e){console.log('error putting this in allAnnouncementsSummary', e);}
+
                 const uploadedFile = await File.create(file);
                 const fileID = uploadedFile._id.toString();
                 await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+
+                const currEmbedding = await fetchEmbedding(JSON.stringify(file));
+                console.log('announcement embedding', currEmbedding.data[0].embedding);
+                records.push({id: fileID, values: currEmbedding.data[0].embedding});
             }
         }
     }
+    let combinedRawText = "";
+    console.log(rawTextLines);
+    for (lines in rawTextLines){
+        combinedRawText += rawTextLines[lines];
+    }
+    allAnnouncementsFile.rawText = combinedRawText;
+    console.log(allAnnouncementsFile);
+    const uploadedAllAnnouncementsFile = await File.create(allAnnouncementsFile);
+    const allAnnouncementsFileID = uploadedAllAnnouncementsFile._id.toString();
+    await User.findByIdAndUpdate(userID, { $push: { files: allAnnouncementsFileID } });
+
+    await index.upsert(records);
 }
 
-async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions){
+async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index){
     // Pull users assignments
     // console.log(classJson)
+    let records = [];
     for(i in classJson){
         if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
             console.log("Pulling assignments for " + classJson[i].course_code)
@@ -196,9 +240,15 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
                 const uploadedFile = await File.create(file);
                 const fileID = uploadedFile._id.toString();
                 await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+
+                const currEmbedding = await fetchEmbedding(JSON.stringify(file));
+                console.log('assignment embedding', currEmbedding.data[0].embedding);
+                records.push({id: fileID, values: currEmbedding.data[0].embedding});
+                
             }
         }
     }
+    await index.upsert(records);
 }
 
 /** 
@@ -233,11 +283,21 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     }
 
     await User.findByIdAndUpdate(userID, { $set: { classJson: classJson } });
-    
+
+    const pinecone = new Pinecone();      
+    await pinecone.createIndex({
+        name: userID,
+        dimension: 1536,
+        waitUntilReady: true
+    });
+    const index = pinecone.index(userID);
+
+    let records = [];
+
     // Pull users assignments
-    await pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions);
+    await pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index);
     // Pull users assignments
-    await pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions);
+    await pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions, index);
 
     const classProcessingPromises = classJson.map(async classItem => {
         try{
@@ -269,6 +329,10 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
                     const uploadedFile = await File.create(currFile);
                     const fileid = uploadedFile._id.toString();
                     await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
+
+                    const currEmbedding = await fetchEmbedding(JSON.stringify(currFile));
+                    console.log('course file embedding', currEmbedding.data[0].embedding);
+                    records.push({id: fileid, values: currEmbedding.data[0].embedding});
                 }
                 // console.log('uploaded file', uploadedFile);
                 // console.log('with this id', uploadedFile._id);
@@ -280,12 +344,47 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     // Wait for all classes to be processed
     await Promise.all(classProcessingPromises);
 
+    await index.upsert(records);
+    
     let endTime = Date.now();
     console.log("Total time: " + (endTime - startTime) + " milliseconds");
     return;
 }
 
+
+async function fetchEmbedding(input) {
+    const url = 'https://api.openai.com/v1/embeddings';
+    const data = {
+    input: input,
+    model: "text-embedding-ada-002"
+    };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const jsonData = await response.json();
+    console.log(jsonData);
+    return jsonData;
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+
+
 Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
+
     try {
         var files = req.files.file;
         //check if files in an arrray, if not make it an array
@@ -391,7 +490,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     let finalAnswer = answer;
     for (let i = 0; i < sources.length; i++){
         // console.log( `Source ${i+1}=${sources}\n`);
-        finalAnswer += ` Source ${i+1}=${sources}\n`;
+        finalAnswer += `\n Source ${i+1}=${sources[i]}\n`;
     }
     console.log('FINAL ANSWER ', finalAnswer);
     const foundUser = await User.findById(res.userProfile._id.toString());
@@ -409,12 +508,12 @@ getTopKRelevant = async (query, user, k) => {
     // console.log('canvasFiles', canvasFiles);
     const personalFiles = await dataProvider.getPersonalFiles();
     // const collegeFiles = await dataProvider.getCollegeFiles();
-    // console.log('personalFiles', personalFiles);
+    console.log('personalFiles', personalFiles);
     const allFiles = canvasFiles.concat(personalFiles);
     // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
     console.log(allFiles.length);
     const proompter = new Proompter();
-    const topKIds = await proompter.pickTopKFiles(allFiles, query, k);
+    const topKIds = await proompter.pickTopKFiles(allFiles, query, k, user._id.toString());
     console.log(topKIds);
     return topKIds;
 }

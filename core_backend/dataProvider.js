@@ -13,6 +13,7 @@ const User = require("../models/user");
 const mongoose = require('mongoose');
 const { ObjectId } = require("mongodb");
 const { firestore } = require("firebase-admin");
+const { Pinecone } =  require("@pinecone-database/pinecone");
 
 const summaryPrompt = "Summarize the contents of this document in 3 sentences. Classify it as lecture, practice test, project, syllabus, etc. Be consise and without filler words."
 
@@ -174,6 +175,35 @@ class DataProvider{
         return response;
     }
 
+    fetchEmbedding = async (input) => {
+      const url = 'https://api.openai.com/v1/embeddings';
+      const data = {
+      input: input,
+      model: "text-embedding-ada-002"
+      };
+  
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify(data)
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+  
+      const jsonData = await response.json();
+      console.log(jsonData);
+      return jsonData;
+    } catch (error) {
+      console.error('Error:', error);
+    }  
+  }
+
     uploadFileToMongo = async (file) => {
       // get raw text, gen file summary
       
@@ -204,7 +234,15 @@ class DataProvider{
       endTime = Date.now();
       // console.log("Query took " + (endTime - startTime) + " milliseconds");
     
-      const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text, owner: this.userID});    
+      const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text, owner: this.userID}); 
+      
+      const pinecone = new Pinecone();
+      const ind = pinecone.index(this.userID);      
+      const stringToVectorize = `${file.name}. ${response.toString()}. ${data.text}.`   
+      const currEmbedding = await this.fetchEmbedding(stringToVectorize);
+      console.log('personal file embedding', currEmbedding.data[0].embedding);
+      await ind.upsert([{id:newFile._id.toString(), values: currEmbedding.data[0].embedding}]);
+
       return newFile;
     }
     createPdfFromMongoId = async (fileId, outputPath) => {
