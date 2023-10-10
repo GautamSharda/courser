@@ -42,7 +42,7 @@ export default function Dropdown({ files }) {
               )}
             </Menu.Item>
           </div>
-          <div className="py-1 h-40 overflow-y-scroll">
+          <div className="py-1 max-h-40 overflow-y-scroll">
             {files.map((file, index) => (
               <Menu.Item key={index}>
                 {({ active }) => (
