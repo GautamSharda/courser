@@ -140,6 +140,33 @@ async function processFile(fileUrl, metadata) {
     const processedFiles = await Promise.all(processedFilesPromises);
     return processedFiles;
 }
+async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions){
+    for (i in classJson){
+        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
+            console.log("Pulling announcements for " + classJson[i].course_code)
+            const res = await fetch(`https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/discussion_topics?only_announcements=true‍`, requestOptions);
+            const jsonStr = await res.text();
+            const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+            let announcements = JSON.parse(modifiedStr);
+            console.log(classJson[i], announcements.length);
+            for (announcement of announcements){
+                const file = {
+                    owner: userID,
+                    id: announcement.id,
+                    created_at: assignment.posted_at,
+                    course_id: String(classJson[i].id),
+                    display_name: announcement.title,
+                    rawText: announcement.message ? announcement.message : 'null',
+                    summary: `{This file is an announcement for ${classJson[i].name} class titled ${announcement.title}}. It was made on ${assignment.posted_at}`,
+                    type: "announcement"
+                }
+                const uploadedFile = await File.create(file);
+                const fileID = uploadedFile._id.toString();
+                await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+            }
+        }
+    }
+}
 
 // Pull users assignments + create due date file
 async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions){
@@ -247,6 +274,8 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     // Pull users assignments
     // TODO: Parallize this, its rather slow
     await pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions);
+    // Pull users assignments
+    await pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions);
 
     const classProcessingPromises = classJson.map(async classItem => {
         try{
@@ -271,12 +300,14 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
             // Push file metadata to DB
             for (let j = 0; j < processedFiles.length; j++) {
                 let currFile = processedFiles[j];
-                currFile.owner = userID;
-                currFile.preview_url = `https://uiowa.instructure.com/courses/${classItem.id.slice(-6)}/files?preview=${currFile.id}`
-                // delete currFile.id;
-                const uploadedFile = await File.create(currFile);
-                const fileid = uploadedFile._id.toString();
-                await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
+                if (currFile.created_at.startsWith("2023")){
+                    currFile.owner = userID;
+                    currFile.preview_url = `https://uiowa.instructure.com/courses/${classItem.id.slice(-6)}/files?preview=${currFile.id}`
+                    delete currFile.id;
+                    const uploadedFile = await File.create(currFile);
+                    const fileid = uploadedFile._id.toString();
+                    await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
+                }
                 // console.log('uploaded file', uploadedFile);
                 // console.log('with this id', uploadedFile._id);
             }
@@ -376,7 +407,9 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
             const source = await dp.fetchURL(id);
             sources.push(source);
         }catch(e){}
-        documents.push(new Document({ text: rawText }))
+        let combinedText = await dp.fetchTitle(id) + await dp.fetchSummary(id) + rawText;
+        console.log(combinedText);
+        documents.push(new Document({ text: combinedText }));
     }
 
     // Specify LLM model
