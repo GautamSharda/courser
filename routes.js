@@ -207,9 +207,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     const today = new Date();
     const fourteenDays = new Date(today.getTime() + (14 * 24 * 60 * 60 * 1000));
     //make sure its between today and 14 days from now
-    console.log(assignmentsArray)
     const filteredFilesArray = assignmentsArray.filter(file => file.due_at && new Date(file.due_at) < fourteenDays && new Date(file.due_at) > today);
-    console.log(filteredFilesArray)
     //Now exclude everything except assignment1Name, and dueDate
     const filteredFilesArray2 = filteredFilesArray.map(file => {
         return {
@@ -218,17 +216,14 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
             dueDate: file.due_at
         }
     });
-    console.log(filteredFilesArray2)
     const dueDateFileRawText = filteredFilesArray2.map(assignment => 
         `${assignment.course_code} - ${assignment.assignmentName} - due on ${assignment.dueDate}`
     ).join('\n');
-    console.log(dueDateFileRawText)
-
     
     // Create due date file
     const dueDateFile = {
         owner: userID,
-        summary: `This file contains all assignments due in the next week (14 days) and their due dates. It should be used to answer queries like what are all the assignments I have due this week? When is X assignment due? Make me a to do list of all my assignments next week`,
+        summary: `This file contains all assignments due in the next two weeks (14 days) and their due dates. It should be used to answer queries like what are all the assignments I have due this week? When is X assignment due? Make me a to do list of all my assignments next week`,
         rawText: dueDateFileRawText,
         type: "Upcoming assignments",
         display_name: "Upcoming assignments",
@@ -276,7 +271,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     await pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions);
     // Pull users assignments
     await pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions);
-
+    return;
     const classProcessingPromises = classJson.map(async classItem => {
         try{
         if (classItem.course_code && classItem.course_code.includes(currentTerm)) {
