@@ -82,18 +82,19 @@ export function Main() {
     });
     const res = await response.json();
     // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
-    typeof res==="string" ? addMessage([{ ...nxtValue }, { "type": "human", "text": res }], scrollToBottom) : addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom)
+    typeof res === "string" ? addMessage([{ ...nxtValue }, { "type": "human", "text": res }], scrollToBottom) : addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom)
     // addM essage([{ "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom); Use this line for testing outside openai
   }
 
   const handleFileUpload = async (e) => {
     const newFiles = e.target.files;
-    console.log(newFiles)
     setIsLoading(true);
+
     const data = new FormData();
     for (let i = 0; i < newFiles.length; i++) {
       data.append('file', newFiles[i]);
     }
+
     const response = await fetch(`${constants.url}/upload`, {
       method: 'POST',
       body: data,
@@ -101,10 +102,9 @@ export function Main() {
 
     });
     const res = await response.json();
-    console.log(res);
     setIsLoading(false);
     const resFiles = res.files ? res.files : [];
-    setUser({ ...user, files: [...file, ...resFiles] });
+    setUser({ ...user, personalFiles: [...user.personalFiles, ...resFiles] });
   }
 
   // =====> Function to delete files <======
@@ -253,7 +253,8 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) 
                 </div>
 
                 <div className="flow-root">
-                  <Dropdown files={file} text={'Your Files'} />
+
+                  <Dropdown files={file} />
                 </div>
 
               </div>
