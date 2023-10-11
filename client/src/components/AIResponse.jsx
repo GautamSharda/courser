@@ -27,14 +27,21 @@ import React from 'react';
 //   const plan = {"type": "AI", "plans": dummyData.plans, "text": "", "startText": "We thought theses courses would fit well for you next semester", "endText": "Do you have any suggestions to this list" }
 //setPlans([{"type": "AI", "plans": res.courses, "text": "", "startText": "We thought theses courses would fit well for you next semester", "endText": "Do you have any suggestions to this list" }]);
 
-export function Plan({ plan }) {
-  const {plans, startText, endText, text, type} = plan;
+export function AIResponse({ response }) {
+  const { subject, text, type, sources } = response;
   if (type == "AI") {
     return (
-      <div className='planContainer'>
+      <div className='responseContainer'>
         <p>{text}</p>
+        <br/>
+
+        {sources.map((source, i) => (
+          <p>
+            <strong>Source {source.number}:</strong> <u className='opacity-70 hover:opacity-100 transition duration-200'><a href={source.url} target="_blank">{source.url}</a></u>
+          </p>
+        ))}
       </div>
-      )
+    )
   }
   return (
     <div className="humanAnswer">

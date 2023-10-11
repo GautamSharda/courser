@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import isLoggedIn from '@/helpers/isLoggedIn';
 import { Loader } from './Loader';
-import { Plan } from './Plan';
+import { AIResponse } from './AIResponse';
 import messagesHook from '@/helpers/useMessage';
 import Dropdown from './Dropdown';
 import ToolTip from './ToolTip';
@@ -82,11 +82,7 @@ export function Main() {
       headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
     });
     const res = await response.json();
-    if (typeof res === "string") {
-      addMessage([{ ...nxtValue }, { "type": "AI", "text": res }], scrollToBottom);
-    } else {
-      addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom)
-    }
+    addMessage([{ ...nxtValue }, { "type": "AI", "text": res.finalAnswer, "sources": res.sources }], scrollToBottom);
   }
 
   const handleFileUpload = async (e) => {
@@ -164,8 +160,8 @@ export function Main() {
           }}
             ref={myRef}
             className='w-full flex-col items-center justify-center h-[80%] overflow-auto'>
-            {messages.map((plan, i) => {
-              return (<Plan plan={plan} key={i} />)
+            {messages.map((response, i) => {
+              return (<AIResponse response={response} key={i} />)
             })}
           </div>
           <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`Follow up`} />

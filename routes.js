@@ -510,14 +510,10 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
             source += `=${cleanedString}`
         }
 
-        allSources.push({ number: number, source: source });
+        allSources.push({ number: number, url: source });
     }
 
-    // create an html string with the sources
-    let sourcesString = "";
-    for (let i = 0; i < allSources.length; i++) {
-        sourcesString += `<a href="${allSources[i].source}">Source ${allSources[i].number}</a><br>`;
-    }
+    finalAnswer = finalAnswer.replace(/Source \d+=.*/g, '');
 
     // let newFinalAnswer = finalAnswer.replace(/Source \d=.*$/gm, '').trim().replace(/\s+$/, '');
 
@@ -526,7 +522,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     foundUser.responses.push(finalAnswer);
     await foundUser.save();
 
-    res.json(finalAnswer);
+    res.json({finalAnswer: finalAnswer, sources: allSources});
 }));
 
 getTopKRelevant = async (query, user, k) => {

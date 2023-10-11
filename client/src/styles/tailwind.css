@@ -90,7 +90,7 @@
 }
 
 
-.planContainer {
+.responseContainer {
   width: 100%;
 
   @media (min-width: 640px) {
@@ -99,12 +99,14 @@
 
   max-width: 90vw;
   display: flex;
+  border-radius: 2px 25px 25px 2px;
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
   margin: 0px !important;
   padding: 0px !important;
-  padding: 10px;
+  padding: 20px;
+  background-color: #f0f0f0;
 }
 
 
