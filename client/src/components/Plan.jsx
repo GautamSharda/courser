@@ -32,15 +32,7 @@ export function Plan({ plan }) {
   if (type == "AI") {
     return (
       <div className='planContainer'>
-          {startText && <p className='pt-4'>{startText}</p>}
-          {text && <p className='pt-4'>{text}</p>}
-          {plans.map((courses, i) => (
-          <div key={i} className='PeopleListParent'>
-            <h4 className='pt-12 font-semibold text-lg'>Course option #{i + 1}</h4>
-            <PeopleList people={courses.courses} key={i}/>
-          </div>
-          ))}
-          {endText && <p className='pt-8'>{endText}</p>}
+        <p>{text}</p>
       </div>
       )
   }

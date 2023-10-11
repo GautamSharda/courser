@@ -73,6 +73,7 @@ export function Main() {
   const sendNextQuestion = async (nextQuestion) => {
     scrollToBottom();
     const nxtValue = { "type": "human", "text": nextQuestion }
+    addMessage([{ ...nxtValue }], scrollToBottom);
     const data = new FormData();
     data.append('prompt', nextQuestion);
     const response = await fetch(`${constants.url}/answer`, {
@@ -81,9 +82,11 @@ export function Main() {
       headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
     });
     const res = await response.json();
-    // addMessage([{...nxtValue}, {"type": "AI", "plans": res.plans, "text": "", "startText": "Here is a revised set of courses", "endText": "Does this meet your expectations better?" }], scrollToBottom);
-    typeof res === "string" ? addMessage([{ ...nxtValue }, { "type": "human", "text": res }], scrollToBottom) : addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom)
-    // addM essage([{ "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom); Use this line for testing outside openai
+    if (typeof res === "string") {
+      addMessage([{ ...nxtValue }, { "type": "AI", "text": res }], scrollToBottom);
+    } else {
+      addMessage([{ ...nxtValue }, { "type": "human", "text": "We received your question. Thank you kind beta tester!" }], scrollToBottom)
+    }
   }
 
   const handleFileUpload = async (e) => {
@@ -146,6 +149,8 @@ export function Main() {
   }, [showYTModal]);
 
   if (isLoading) return <Loader />;
+
+  console.log(messages);
 
   if (version === 'chatWindow') {
     return (
@@ -216,7 +221,7 @@ export function Main() {
             size="2x"
             color="#FBBF24"
             onClick={(e) => toggleYTModal(e)}
-            className="cursor-pointer transition-colors duration-300 hover:text-yellow-400 cursor-pointer fa-question-circle"
+            className="transition-colors duration-300 hover:text-yellow-400 cursor-pointer fa-question-circle"
           />
         </ToolTip>
       </footer>
