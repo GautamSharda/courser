@@ -489,40 +489,18 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     );
 
     const answer = response.toString();
-    let finalAnswer = answer;
-    for (let i = 0; i < sources.length; i++) {
-        // console.log( `Source ${i+1}=${sources}\n`);
-        finalAnswer += `\n Source ${i + 1}=${sources[i]}\n`;
-    }
 
-    // Split the string based on the occurrence of "Source"
-    let parts = finalAnswer.split("Source");
-
-    // Extract numbers and names from the parts
     let allSources = [];
-    for (let i = 1; i < parts.length; i++) {
-        // Assuming the format is " Number=Name"
-        let sourceParts = parts[i].split("=");
-        let number = sourceParts[0].trim();
-        let source = sourceParts[1].trim();
-        if (sourceParts.length > 2) {
-            let cleanedString = sourceParts[2].replace(/[^0-9]*$/, '');
-            source += `=${cleanedString}`
-        }
-
-        allSources.push({ number: number, url: source });
+    for (let i = 1; i <= sources.length; i++) {
+        allSources.push({ number: i, url: sources[i - 1] });
     }
-
-    finalAnswer = finalAnswer.replace(/Source \d+=.*/g, '');
-
-    // let newFinalAnswer = finalAnswer.replace(/Source \d=.*$/gm, '').trim().replace(/\s+$/, '');
 
     const foundUser = await User.findById(res.userProfile._id.toString());
     foundUser.questions.push(prompt);
-    foundUser.responses.push(finalAnswer);
+    foundUser.responses.push(answer);
     await foundUser.save();
 
-    res.json({finalAnswer: finalAnswer, sources: allSources});
+    res.json({ finalAnswer: answer, sources: allSources });
 }));
 
 getTopKRelevant = async (query, user, k) => {

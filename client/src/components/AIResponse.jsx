@@ -32,12 +32,14 @@ export function AIResponse({ response }) {
   if (type == "AI") {
     return (
       <div className='responseContainer'>
-        <p>{text}</p>
+        {text.split('\n').map((item, i) => (
+          <p key={i}>{item}<br/></p>
+        ))}
         <br/>
 
         {sources.map((source, i) => (
           <p>
-            <strong>Source {source.number}:</strong> <u className='opacity-70 hover:opacity-100 transition duration-200'><a href={source.url} target="_blank">{source.url}</a></u>
+            <strong>Source {source.number}:</strong> <u className='opacity-100 hover:opacity-60 transition duration-200'><a href={source.url} target="_blank">{source.url}</a></u>
           </p>
         ))}
       </div>
