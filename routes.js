@@ -21,7 +21,7 @@ const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
 const fsNormal = require('fs');
 const { ObjectId } = require("mongodb");
-const { Pinecone } =  require("@pinecone-database/pinecone");
+const { Pinecone } = require("@pinecone-database/pinecone");
 
 // Important constants
 const currentTerm = "Fall23"; // This is the term that we're currently in
@@ -42,19 +42,19 @@ Routes.get("/home", isLoggedIn, asyncMiddleware(async (req, res) => {
     for (const fileId of fileIds) {
         //get only the field fileName from the file object
         const fileName = await File.findById(fileId).select('fileName');
-        files.push({name: fileName.fileName, id: fileId});
+        files.push({ name: fileName.fileName, id: fileId });
     }
     res.userProfile.personalFiles = files;
     // if (files.length === 0 && res.userProfile.canvasToken){
     //     postCanvasData(res.userProfile._id.toString(), res.userProfile.canvasToken);
     // }
-    res.json({user: res.userProfile});
+    res.json({ user: res.userProfile });
 }));
 
 
 Routes.get("/isloggedin", isLoggedIn, asyncMiddleware(async (req, res) => {
     console.log('4');
-    res.json({user: res.userProfile});
+    res.json({ user: res.userProfile });
 }));
 
 /** Helper function
@@ -112,7 +112,7 @@ async function processFile(fileUrl, metadata) {
  * @param {*} course this is the course object
  * @returns a promise that resolves to an array of files enriched with summary and raw text
  */
- async function processFilesBatch(filesBatch, course) {
+async function processFilesBatch(filesBatch, course) {
     //  console.log('FBH', filesBatch.length);
     // Filter out non-PDF files
     const pdfFiles = filesBatch.filter(file => file['content-type'] === "application/pdf");
@@ -141,25 +141,27 @@ async function processFile(fileUrl, metadata) {
     const processedFiles = await Promise.all(processedFilesPromises);
     return processedFiles;
 }
-async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions, index){
-    let allAnnouncementsFile = 
-    {owner: userID, 
-    display_name: "AllRecentAnnouncements", 
-    summary: `This file contains all the announcements made across all courses in the past 7 days. 
+async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions, index) {
+    let allAnnouncementsFile =
+    {
+        owner: userID,
+        display_name: "AllRecentAnnouncements",
+        summary: `This file contains all the announcements made across all courses in the past 7 days. 
     It could be used to answer queries like what are my most recent announcements? Any new announcements made in X class? 
     What are all the announcements made this week? Give me a summary of my recent announcements.`,
-    rawText: ""};
+        rawText: ""
+    };
     let records = [];
     let rawTextLines = [];
-    for (i in classJson){
-        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
+    for (i in classJson) {
+        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)) {
             console.log("Pulling announcements for " + classJson[i].course_code)
             const res = await fetch(`https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/discussion_topics?only_announcements=true‍`, requestOptions);
             const jsonStr = await res.text();
             const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
             let announcements = JSON.parse(modifiedStr);
             console.log(classJson[i], announcements.length);
-            for (announcement of announcements){
+            for (announcement of announcements) {
                 const file = {
                     owner: userID,
                     id: announcement.id,
@@ -171,21 +173,21 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
                     type: "announcement"
                 }
 
-                try{
-                const createdAtDate = new Date(file.created_at);
+                try {
+                    const createdAtDate = new Date(file.created_at);
 
-                // Get the current date
-                const currentDate = new Date();
+                    // Get the current date
+                    const currentDate = new Date();
 
-                // Subtract 7 days from the current date to get the start of the 7-day window
-                const sevenDaysAgo = new Date(currentDate);
-                sevenDaysAgo.setDate(currentDate.getDate() - 7);
+                    // Subtract 7 days from the current date to get the start of the 7-day window
+                    const sevenDaysAgo = new Date(currentDate);
+                    sevenDaysAgo.setDate(currentDate.getDate() - 7);
 
-                // Check if the createdAtDate is within the last 7 days
-                if (createdAtDate >= sevenDaysAgo && createdAtDate <= currentDate) {
-                    rawTextLines.push(JSON.stringify(file) + "\n");
-                }
-            }catch(e){console.log('error putting this in allAnnouncementsSummary', e);}
+                    // Check if the createdAtDate is within the last 7 days
+                    if (createdAtDate >= sevenDaysAgo && createdAtDate <= currentDate) {
+                        rawTextLines.push(JSON.stringify(file) + "\n");
+                    }
+                } catch (e) { console.log('error putting this in allAnnouncementsSummary', e); }
 
                 const uploadedFile = await File.create(file);
                 const fileID = uploadedFile._id.toString();
@@ -193,13 +195,13 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
 
                 const currEmbedding = await fetchEmbedding(JSON.stringify(file));
                 console.log('announcement embedding', currEmbedding.data[0].embedding);
-                records.push({id: fileID, values: currEmbedding.data[0].embedding});
+                records.push({ id: fileID, values: currEmbedding.data[0].embedding });
             }
         }
     }
     let combinedRawText = "";
     console.log(rawTextLines);
-    for (lines in rawTextLines){
+    for (lines in rawTextLines) {
         combinedRawText += rawTextLines[lines];
     }
     allAnnouncementsFile.rawText = combinedRawText;
@@ -211,19 +213,19 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
     await index.upsert(records);
 }
 
-async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index){
+async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index) {
     // Pull users assignments
     // console.log(classJson)
     let records = [];
-    for(i in classJson){
-        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
+    for (i in classJson) {
+        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)) {
             console.log("Pulling assignments for " + classJson[i].course_code)
             const res = await fetch(`https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/assignments`, requestOptions);
             const jsonStr = await res.text();
             const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
             let assignments = JSON.parse(modifiedStr);
 
-            for (assignment of assignments){
+            for (assignment of assignments) {
                 const file = {
                     owner: userID,
                     id: assignment.id,
@@ -243,8 +245,8 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
 
                 const currEmbedding = await fetchEmbedding(JSON.stringify(file));
                 console.log('assignment embedding', currEmbedding.data[0].embedding);
-                records.push({id: fileID, values: currEmbedding.data[0].embedding});
-                
+                records.push({ id: fileID, values: currEmbedding.data[0].embedding });
+
             }
         }
     }
@@ -255,8 +257,8 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
  * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
  * Owner: Ilya 
  */
- async function postCanvasData(userID, canvasToken) {
-    
+async function postCanvasData(userID, canvasToken) {
+
 
     let startTime = Date.now();
 
@@ -284,7 +286,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
 
     await User.findByIdAndUpdate(userID, { $set: { classJson: classJson } });
 
-    const pinecone = new Pinecone();      
+    const pinecone = new Pinecone();
     await pinecone.createIndex({
         name: userID,
         dimension: 1536,
@@ -300,52 +302,52 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     await pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions, index);
 
     const classProcessingPromises = classJson.map(async classItem => {
-        try{
-        if (classItem.course_code && classItem.course_code.includes(currentTerm)) {
-            let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classItem.id}/files?per_page=1000`;
-            let fileDataResponse = await fetch(filesUrl, requestOptions);
-            let jsonStr = await fileDataResponse.text();
-            let modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
-            let filesRes = JSON.parse(modifiedStr);
-            
-            if (fileDataResponse.status != 200) {
-                return;
-            }
+        try {
+            if (classItem.course_code && classItem.course_code.includes(currentTerm)) {
+                let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classItem.id}/files?per_page=1000`;
+                let fileDataResponse = await fetch(filesUrl, requestOptions);
+                let jsonStr = await fileDataResponse.text();
+                let modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+                let filesRes = JSON.parse(modifiedStr);
 
-            console.log("Pulling content for " + classItem.course_code);
-            // console.log("filesRes", JSON.stringify(filesRes, null, 2));
-            
-            // Process and enrich the files
-            const processedFiles = await processFilesBatch(filesRes, classItem);
-            // console.log('enrichedFiles', processedFiles);
-
-            // Push file metadata to DB
-            for (let j = 0; j < processedFiles.length; j++) {
-                let currFile = processedFiles[j];
-                if (currFile.created_at.startsWith("2023")){
-                    currFile.owner = userID;
-                    currFile.preview_url = `https://uiowa.instructure.com/courses/${classItem.id.slice(-6)}/files?preview=${currFile.id}`
-                    delete currFile.id;
-                    const uploadedFile = await File.create(currFile);
-                    const fileid = uploadedFile._id.toString();
-                    await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
-
-                    const currEmbedding = await fetchEmbedding(JSON.stringify(currFile));
-                    console.log('course file embedding', currEmbedding.data[0].embedding);
-                    records.push({id: fileid, values: currEmbedding.data[0].embedding});
+                if (fileDataResponse.status != 200) {
+                    return;
                 }
-                // console.log('uploaded file', uploadedFile);
-                // console.log('with this id', uploadedFile._id);
+
+                console.log("Pulling content for " + classItem.course_code);
+                // console.log("filesRes", JSON.stringify(filesRes, null, 2));
+
+                // Process and enrich the files
+                const processedFiles = await processFilesBatch(filesRes, classItem);
+                // console.log('enrichedFiles', processedFiles);
+
+                // Push file metadata to DB
+                for (let j = 0; j < processedFiles.length; j++) {
+                    let currFile = processedFiles[j];
+                    if (currFile.created_at.startsWith("2023")) {
+                        currFile.owner = userID;
+                        currFile.preview_url = `https://uiowa.instructure.com/courses/${classItem.id.slice(-6)}/files?preview=${currFile.id}`
+                        delete currFile.id;
+                        const uploadedFile = await File.create(currFile);
+                        const fileid = uploadedFile._id.toString();
+                        await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
+
+                        const currEmbedding = await fetchEmbedding(JSON.stringify(currFile));
+                        console.log('course file embedding', currEmbedding.data[0].embedding);
+                        records.push({ id: fileid, values: currEmbedding.data[0].embedding });
+                    }
+                    // console.log('uploaded file', uploadedFile);
+                    // console.log('with this id', uploadedFile._id);
+                }
             }
-        }
-    }catch(e){console.log("error processing class", e);}
+        } catch (e) { console.log("error processing class", e); }
     });
 
     // Wait for all classes to be processed
     await Promise.all(classProcessingPromises);
 
     await index.upsert(records);
-    
+
     let endTime = Date.now();
     console.log("Total time: " + (endTime - startTime) + " milliseconds");
     return;
@@ -355,30 +357,30 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
 async function fetchEmbedding(input) {
     const url = 'https://api.openai.com/v1/embeddings';
     const data = {
-    input: input,
-    model: "text-embedding-ada-002"
+        input: input,
+        model: "text-embedding-ada-002"
     };
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify(data)
-    });
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify(data)
+        });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const jsonData = await response.json();
+        console.log(jsonData);
+        return jsonData;
+    } catch (error) {
+        console.error('Error:', error);
     }
-
-    const jsonData = await response.json();
-    console.log(jsonData);
-    return jsonData;
-  } catch (error) {
-    console.error('Error:', error);
-  }
 }
 
 
@@ -400,14 +402,14 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
             // await myfile.mv(filePath);
             const dp = new DataProvider(res.userProfile._id.toString());
             const uploadedFile = await dp.uploadFileToMongo(myfile);
-            mongoFiles.push({name: uploadedFile.fileName, id: uploadedFile._id.toString()});
+            mongoFiles.push({ name: uploadedFile.fileName, id: uploadedFile._id.toString() });
             fileIds.push(uploadedFile._id.toString());
             //const writePdf = await dp.createPdfFromMongoId(uploadedFile._id.toString(), 'data');
         }
         const foundUser = await User.findById(res.userProfile._id);
         foundUser.personalFiles = foundUser.personalFiles.concat(fileIds);
         await foundUser.save();
-        res.json({files: mongoFiles});
+        res.json({ files: mongoFiles });
     } catch (error) {
         console.error('Error processing file:', error);
         res.status(500).send('Server error');
@@ -464,10 +466,10 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
         // console.log(file.id);
         let rawText = await dp.fetchRawTextOfFile(id); // ??
         // console.log(rawText + '\n');
-        try{
+        try {
             const source = await dp.fetchURL(id);
             sources.push(source);
-        }catch(e){}
+        } catch (e) { }
         let combinedText = await dp.fetchTitle(id) + await dp.fetchSummary(id) + rawText;
         console.log(combinedText);
         documents.push(new Document({ text: combinedText }));
@@ -488,17 +490,43 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
 
     const answer = response.toString();
     let finalAnswer = answer;
-    for (let i = 0; i < sources.length; i++){
+    for (let i = 0; i < sources.length; i++) {
         // console.log( `Source ${i+1}=${sources}\n`);
-        finalAnswer += `\n Source ${i+1}=${sources[i]}\n`;
+        finalAnswer += `\n Source ${i + 1}=${sources[i]}\n`;
     }
-    console.log('FINAL ANSWER ', finalAnswer);
+
+    // Split the string based on the occurrence of "Source"
+    let parts = finalAnswer.split("Source");
+
+    // Extract numbers and names from the parts
+    let allSources = [];
+    for (let i = 1; i < parts.length; i++) {
+        // Assuming the format is " Number=Name"
+        let sourceParts = parts[i].split("=");
+        let number = sourceParts[0].trim();
+        let source = sourceParts[1].trim();
+        if (sourceParts.length > 2) {
+            let cleanedString = sourceParts[2].replace(/[^0-9]*$/, '');
+            source += `=${cleanedString}`
+        }
+
+        allSources.push({ number: number, source: source });
+    }
+
+    // create an html string with the sources
+    let sourcesString = "";
+    for (let i = 0; i < allSources.length; i++) {
+        sourcesString += `<a href="${allSources[i].source}">Source ${allSources[i].number}</a><br>`;
+    }
+
+    let newFinalAnswer = finalAnswer.replace(/Source \d=.*$/gm, '').trim().replace(/\s+$/, '');
+
     const foundUser = await User.findById(res.userProfile._id.toString());
     foundUser.questions.push(prompt);
-    foundUser.responses.push(answer);
+    foundUser.responses.push(newFinalAnswer);
     await foundUser.save();
 
-    res.json(finalAnswer);
+    res.json(newFinalAnswer);
 }));
 
 getTopKRelevant = async (query, user, k) => {
