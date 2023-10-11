@@ -94,6 +94,16 @@ function MobileNavigation() {
   )
 }
 
+const enterpriseLetsChat = () => {
+  const recipient = "patrick.123.foster@gmail.com"
+  const subject = encodeURIComponent("Hello 👋");
+  const body = encodeURIComponent(
+    "Hey Patrick,\n\nI'd love to hear more about Courser!"
+  );
+  const mailtoLink = `mailto:${recipient}?subject=${subject}&body=${body}`;
+  window.open(mailtoLink, "_blank");
+}
+
 export function Header() {
   return (
     <header className="py-10">
@@ -110,7 +120,11 @@ export function Header() {
               />
             </Link>
             <div className="hidden md:flex md:gap-x-6">
-              <a href="https://www.patrickrfoster.com" target='_blank'     
+            <a onClick={enterpriseLetsChat}
+                className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+                Get in touch
+              </a>
+              {/* <a href="https://www.patrickrfoster.com" target='_blank'     
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
                   About Us
               </a>
@@ -121,7 +135,7 @@ export function Header() {
               <a href="https://twitter.com/gautam_sharda_" target='_blank'     
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
                   Our Socials
-              </a>
+              </a> */}
             </div>
           </div>
           <div className="flex items-center gap-x-5 md:gap-x-8">
@@ -130,7 +144,7 @@ export function Header() {
             </div>
             <Button href="/home" color="iowaYellow">
               <span>
-                Get started <span className="hidden lg:inline">today</span>
+                Beta Test <span className="hidden lg:inline">Courser</span>
               </span>
             </Button>
             <div className="-mr-1 md:hidden">
