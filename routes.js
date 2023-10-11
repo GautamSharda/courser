@@ -519,14 +519,14 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
         sourcesString += `<a href="${allSources[i].source}">Source ${allSources[i].number}</a><br>`;
     }
 
-    let newFinalAnswer = finalAnswer.replace(/Source \d=.*$/gm, '').trim().replace(/\s+$/, '');
+    // let newFinalAnswer = finalAnswer.replace(/Source \d=.*$/gm, '').trim().replace(/\s+$/, '');
 
     const foundUser = await User.findById(res.userProfile._id.toString());
     foundUser.questions.push(prompt);
-    foundUser.responses.push(newFinalAnswer);
+    foundUser.responses.push(finalAnswer);
     await foundUser.save();
 
-    res.json(newFinalAnswer);
+    res.json(finalAnswer);
 }));
 
 getTopKRelevant = async (query, user, k) => {
