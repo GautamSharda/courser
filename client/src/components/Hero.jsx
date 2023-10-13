@@ -25,7 +25,7 @@ export function Hero({ signUpButton }) {
       Courser is like ChatGPT for your classes. It can generate a helpful study guide for Geology, explain Ribosomes, or make a multiple choice quiz for Physics.
       </p>
       <div className="mt-10 flex justify-center gap-x-6">
-        <Button href="/home">Beta Test Courser</Button>
+        <Button onClick={signUpButton}>Beta Test Courser</Button>
       </div>
     </Container>
   )

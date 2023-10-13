@@ -14,6 +14,7 @@ const randomStringToHash24Bits = (inputString) => {
 }
 
 const isLoggedIn = async (req, res, next) => {
+    
     const token = req.headers["x-access'courser-auth-token"];
     console.log(token);
 

@@ -104,7 +104,7 @@ const enterpriseLetsChat = () => {
   window.open(mailtoLink, "_blank");
 }
 
-export function Header() {
+export function Header({signUpButton}) {
   return (
     <header className="py-10">
       <Container>
@@ -142,7 +142,7 @@ export function Header() {
             <div className="hidden md:block">
               {/* <NavLink href="/login">Sign in</NavLink> */}
             </div>
-            <Button href="/home" color="iowaYellow">
+            <Button onClick={signUpButton} color="iowaYellow">
               <span>
                 Beta Test <span className="hidden lg:inline">Courser</span>
               </span>

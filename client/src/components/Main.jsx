@@ -27,15 +27,18 @@ export function Main() {
     if (messages.length === 0) return 'firstQuestion';
     return 'chatWindow'
   }
+  console.log('asdfdsfs');
   const version = getVersion();
 
   const file = (user && user.personalFiles) ? user.personalFiles : [];
 
   const auth = async () => {
+    console.log('in auth');
     const res = await isLoggedIn(constants.clientUrl, '/home');
     setIsLoading(false);
     if (res) setUser({ ...res.user });
   };
+  console.log('asdf')
 
   useEffect(() => {
     auth();
