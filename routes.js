@@ -43,6 +43,13 @@ Routes.get("/home", isLoggedIn, asyncMiddleware(async (req, res) => {
         //get only the field fileName from the file object
         const fileName = await File.findById(fileId).select('fileName');
         files.push({ name: fileName.fileName, id: fileId });
+    let existingUser = await user.findOne({ canvasToken });
+    if (existingUser) {
+        res.json(existingUser);
+    } else {
+        let newUser = await user.create({ canvasToken });
+        // postCanvasData(newUser, canvasToken); test
+        res.json(newUser);
     }
     res.userProfile.personalFiles = files;
     // if (files.length === 0 && res.userProfile.canvasToken){
