@@ -402,7 +402,7 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
             // await myfile.mv(filePath);
             const dp = new DataProvider(res.userProfile._id.toString());
             const uploadedFile = await dp.uploadFileToMongo(myfile);
-            mongoFiles.push({ name: uploadedFile.fileName, id: uploadedFile._id.toString() });
+            mongoFiles.push({ name: uploadedFile.display_name, id: uploadedFile._id.toString() });
             fileIds.push(uploadedFile._id.toString());
             //const writePdf = await dp.createPdfFromMongoId(uploadedFile._id.toString(), 'data');
         }
