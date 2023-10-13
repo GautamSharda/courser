@@ -126,13 +126,13 @@ export function Header() {
               </a>
               {/* <a href="https://www.patrickrfoster.com" target='_blank'     
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                About Us
+                  About Us
               </a>
-              <a href="https:liaozhu.dev" target='_blank'
+              <a href="https://www.linkedin.com/in/liao-zhu/" target='_blank'     
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                Contact
+                  Contact
               </a>
-              <a href="https://twitter.com/gautam_sharda_" target='_blank'
+              <a href="https://twitter.com/gautam_sharda_" target='_blank'     
                 className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
                   Our Socials
               </a> */}
@@ -142,7 +142,7 @@ export function Header() {
             <div className="hidden md:block">
               {/* <NavLink href="/login">Sign in</NavLink> */}
             </div>
-            <Button onClick={signUpButton} color="iowaYellow">
+            <Button href="/home" color="iowaYellow">
               <span>
                 Beta Test <span className="hidden lg:inline">Courser</span>
               </span>
