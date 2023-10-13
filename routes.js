@@ -162,6 +162,7 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
             let announcements = JSON.parse(modifiedStr);
             console.log(classJson[i], announcements.length);
             for (announcement of announcements) {
+                let preview_url = `https://uiowa.instructure.com/courses/${classJson[i].id.slice(-6)}/discussion_topics/${announcement.id}`
                 const file = {
                     owner: userID,
                     id: announcement.id,
@@ -170,7 +171,8 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
                     display_name: announcement.title,
                     rawText: announcement.message ? announcement.message : 'null',
                     summary: `{This file is an announcement for ${classJson[i].name} class titled ${announcement.title}}. It was made on ${announcement.posted_at}`,
-                    type: "announcement"
+                    type: "announcement",
+                    preview_url: preview_url,
                 }
 
                 try {
@@ -226,6 +228,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
             let assignments = JSON.parse(modifiedStr);
 
             for (assignment of assignments) {
+                let preview_url = `https://uiowa.instructure.com/courses/${classJson[i].id.slice(-6)}/assignments/${assignment.id}`
                 const file = {
                     owner: userID,
                     id: assignment.id,
@@ -237,7 +240,8 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
                     has_submitted_submissions: assignment.has_submitted_submissions,
                     rawText: assignment.description ? assignment.description : 'null',
                     summary: `{Assignment Name=${assignment.name}} for {Course Name = ${classJson[i].name}}. It is due on ${assignment.due_at} and is worth {${assignment.points_possible}} points.`,
-                    type: "assignment"
+                    type: "assignment",
+                    preview_url: preview_url,
                 }
                 const uploadedFile = await File.create(file);
                 const fileID = uploadedFile._id.toString();
@@ -286,6 +290,7 @@ async function postCanvasData(userID, canvasToken) {
 
     await User.findByIdAndUpdate(userID, { $set: { classJson: classJson } });
 
+    console.log("Creating pinecone index..")
     const pinecone = new Pinecone();
     await pinecone.createIndex({
         name: userID,
