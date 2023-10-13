@@ -53,7 +53,7 @@ export default function Dropdown({ files }) {
                       'block px-4 py-2 text-sm'
                     )}
                   >
-                    {file.id}
+                    {file.name}
                   </a>
                 )}
               </Menu.Item>
