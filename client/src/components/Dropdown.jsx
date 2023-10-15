@@ -1,18 +1,18 @@
 import { Fragment } from 'react'
 import { Menu, Transition } from '@headlessui/react'
-import { ChevronDownIcon } from '@heroicons/react/20/solid' 
+import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function Dropdown({files, text}) {
+export default function Dropdown({ files }) {
   return (
     <Menu as="div" className="relative inline-block text-left">
       <div>
         <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-          {text}
-          <ChevronDownIcon className="-mr-1 h-5 w-5 text-gray-400 mt-1" aria-hidden="true" /> 
+          Your Files
+          <ChevronDownIcon className="-mr-1 h-5 w-5 text-gray-400 mt-1" aria-hidden="true" />
         </Menu.Button>
       </div>
 
@@ -41,23 +41,23 @@ export default function Dropdown({files, text}) {
               )}
             </Menu.Item>
           </div>
-          <div className="py-1">
+          <div className="py-1 max-h-40 overflow-y-scroll">
             {files.map((file, index) => (
-                <Menu.Item key={index}>
-                  {({ active }) => (
-                    <a
-                      href="#"
-                      className={classNames(
-                        active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                        'block px-4 py-2 text-sm'
-                      )}
-                    >
-                      {file.name}
-                    </a>
-                  )}
-                </Menu.Item>
+              <Menu.Item key={index}>
+                {({ active }) => (
+                  <a
+                    href="#"
+                    className={classNames(
+                      active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
+                      'block px-4 py-2 text-sm'
+                    )}
+                  >
+                    {file.name}
+                  </a>
+                )}
+              </Menu.Item>
             ))}
-            </div>
+          </div>
         </Menu.Items>
       </Transition>
     </Menu>

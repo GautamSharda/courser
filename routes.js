@@ -3,29 +3,59 @@ if (process.env.NODE_ENV !== "production") {
 }
 const express = require("express");
 const Routes = express.Router();
-const user = require("./models/user");
+const User = require("./models/user");
 const fs = require("fs/promises");
-const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI } = require("llamaindex");
+const { Document, VectorStoreIndex, SummaryIndex, serviceContextFromDefaults, OpenAI, SimpleDirectoryReader } = require("llamaindex");
 const Canvas = require("./classes/Canvas");
 const { Configuration, OpenAIApi } = require("openai");
-const Proompter = require("./proompter");
-const dataProvider = require("./dataProvider");
+const Proompter = require("./core_backend/proompter");
+const path = require('path');
+const File = require("./models/files");
+const { isLoggedIn, asyncMiddleware, randomStringToHash24Bits } = require("./middleware");
+const jwt = require("jsonwebtoken");
+const DataProvider = require("./core_backend/dataProvider");
+const Headers = require("node-fetch").Headers;
+const fetch = require("node-fetch");
 const axios = require('axios');
 const pdf = require('pdf-parse');
 const { MongoClient } = require('mongodb');
+const fsNormal = require('fs');
+const { ObjectId } = require("mongodb");
+const { Pinecone } = require("@pinecone-database/pinecone");
 
-Routes.post("/home", async (req, res) => {
+// Important constants
+const currentTerm = "Fall23"; // This is the term that we're currently in
+
+
+Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
     const { canvasToken } = req.body;
-    let existingUser = await user.findOne({ canvasToken });
-    if (existingUser) {
-        res.json(existingUser);
-    } else {
-        let newUser = await user.create({ canvasToken });
-        // postCanvasData(newUser, canvasToken); test
-        res.json(newUser);
-    }
-});
+    const foundUser = await User.findById(res.userProfile._id);
+    foundUser.canvasToken = canvasToken;
+    await foundUser.save();
+    await postCanvasData(res.userProfile._id.toString(), canvasToken);
+    res.json({ user: foundUser });
+}));
 
+Routes.get("/home", isLoggedIn, asyncMiddleware(async (req, res) => {
+    const fileIds = res.userProfile.personalFiles;
+    const files = [];
+    for (const fileId of fileIds) {
+        //get only the field fileName from the file object
+        const fileName = await File.findById(fileId).select('fileName');
+        files.push({ name: fileName.fileName, id: fileId });
+    }
+    res.userProfile.personalFiles = files;
+    // if (files.length === 0 && res.userProfile.canvasToken){
+    //     postCanvasData(res.userProfile._id.toString(), res.userProfile.canvasToken);
+    // }
+    res.json({ user: res.userProfile });
+}));
+
+
+Routes.get("/isloggedin", isLoggedIn, asyncMiddleware(async (req, res) => {
+    console.log('4');
+    res.json({ user: res.userProfile });
+}));
 
 /** Helper function
  * 
@@ -54,12 +84,12 @@ async function processFile(fileUrl, metadata) {
 
     // Specify LLM model
     const serviceContext = serviceContextFromDefaults({
-        llm: new OpenAI({ model: "gpt-3.5-turbo", temperature: 0 }),
+        llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
     });
-    
+
     // Indexing 
     startTime = Date.now();
-    const index = await SummaryIndex.fromDocuments([document], {serviceContext}); // LlamaIndex embedding
+    const index = await SummaryIndex.fromDocuments([document], { serviceContext }); // LlamaIndex embedding
     // let index = await fetchEmbedding(document.text); // Openai embedding
     endTime = Date.now();
     // console.log("Indexing took " + (endTime - startTime) + " milliseconds");
@@ -83,47 +113,205 @@ async function processFile(fileUrl, metadata) {
  * @returns a promise that resolves to an array of files enriched with summary and raw text
  */
 async function processFilesBatch(filesBatch, course) {
-    return Promise.all(filesBatch.map(async file => {
-        if (file['content-type'] == "application/pdf") { // Only process PDFs
-            file.course_code = course.course_code;
-            file.course_name = course.name;
+    //  console.log('FBH', filesBatch.length);
+    // Filter out non-PDF files
+    const pdfFiles = filesBatch.filter(file => file['content-type'] === "application/pdf");
 
-            try {
-                const [summary, rawText] = await processFile(file.url, { fileName: file.display_name, created_at: file.created_at });
-                if (summary.length > 0 && rawText.length > 0) {
-                    console.log(file.filename + " summary and raw text ✅")
-                    file.summary = summary;
-                    file.rawText = rawText;
-                } else {
-                    console.log(file.filename + " summary and raw text ❌")
-                }
-            } catch (error) {
-                console.log("❌Error❌ with processing file " + file.filename);
+    // console.log('PDF', pdfFiles.length);
+    // Use Promise.all to process all the PDF files in parallel
+    const processedFilesPromises = pdfFiles.map(async file => {
+        file.course_code = course.course_code;
+        file.course_name = course.name;
+
+        try {
+            const [summary, rawText] = await processFile(file.url, { fileName: file.display_name, created_at: file.created_at });
+            if (summary.length > 0 && rawText.length > 0) {
+                console.log(file.filename + " summary and raw text ✅");
+                file.summary = summary;
+                file.rawText = rawText;
+            } else {
+                console.log(file.filename + " summary and raw text ❌");
             }
+        } catch (error) {
+            console.log("❌Error❌ with processing file " + file.filename);
         }
         return file;
-    }));
+    });
+
+    const processedFiles = await Promise.all(processedFilesPromises);
+    return processedFiles;
+}
+async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions, index) {
+    let allAnnouncementsFile =
+    {
+        owner: userID,
+        preview_url: [],
+        display_name: "AllRecentAnnouncements",
+        summary: `This file contains all the announcements made across all courses in the past 7 days. 
+    It could be used to answer queries like what are my most recent announcements? Any new announcements made in X class? 
+    What are all the announcements made this week? Give me a summary of my recent announcements.`,
+        rawText: ""
+    };
+    let records = [];
+    let recentAnnouncementFiles = [];
+    for (i in classJson) {
+        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)) {
+            console.log("Pulling announcements for " + classJson[i].course_code)
+            const res = await fetch(`https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/discussion_topics?only_announcements=true‍`, requestOptions);
+            const jsonStr = await res.text();
+            const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+            let announcements = JSON.parse(modifiedStr);
+            console.log(classJson[i], announcements.length);
+            for (announcement of announcements) {
+                let preview_url = `https://uiowa.instructure.com/courses/${classJson[i].id.slice(-6)}/discussion_topics/${announcement.id}`
+                const file = {
+                    owner: userID,
+                    id: announcement.id,
+                    created_at: announcement.posted_at,
+                    course_id: String(classJson[i].id),
+                    display_name: announcement.title,
+                    rawText: announcement.message ? announcement.message : 'null',
+                    summary: `{This file is an announcement for ${classJson[i].name} class titled ${announcement.title}}. It was made on ${announcement.posted_at}`,
+                    type: "announcement",
+                    preview_url: preview_url,
+                }
+
+                try {
+                    const createdAtDate = new Date(file.created_at);
+
+                    // Get the current date
+                    const currentDate = new Date();
+
+                    // Subtract 7 days from the current date to get the start of the 7-day window
+                    const sevenDaysAgo = new Date(currentDate);
+                    sevenDaysAgo.setDate(currentDate.getDate() - 7);
+
+                    // Check if the createdAtDate is within the last 7 days
+                    if (createdAtDate >= sevenDaysAgo && createdAtDate <= currentDate) {
+                        recentAnnouncementFiles.push(file);
+                        allAnnouncementsFile.preview_url.push([file.preview_url, file.display_name]);
+                    }
+                } catch (e) { console.log('error putting this in allAnnouncementsSummary', e); }
+
+                const uploadedFile = await File.create(file);
+                const fileID = uploadedFile._id.toString();
+                await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+
+                const currEmbedding = await fetchEmbedding(JSON.stringify(file));
+                console.log('announcement embedding', currEmbedding.data[0].embedding);
+                records.push({ id: fileID, values: currEmbedding.data[0].embedding });
+            }
+        }
+    }
+
+    allAnnouncementsFile.rawText = JSON.stringify(recentAnnouncementFiles);
+    // console.log(allAnnouncementsFile);
+    const uploadedAllAnnouncementsFile = await File.create(allAnnouncementsFile);
+    const allAnnouncementsFileID = uploadedAllAnnouncementsFile._id.toString();
+    await User.findByIdAndUpdate(userID, { $push: { files: allAnnouncementsFileID } });
+
+    const currEmbedding = await fetchEmbedding(JSON.stringify(allAnnouncementsFile));
+    records.push({ id: allAnnouncementsFileID, values: currEmbedding.data[0].embedding });
+
+    await index.upsert(records);
+}
+
+async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index) {
+    // Pull users assignments
+    // console.log(classJson)
+    let records = [];
+    let assignmentsArray = [];
+    for(i in classJson){
+        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
+            console.log("Pulling assignments for " + classJson[i].course_code)
+            const res = await fetch(`https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/assignments`, requestOptions);
+            const jsonStr = await res.text();
+            const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+            let assignments = JSON.parse(modifiedStr);
+
+            for (assignment of assignments) {
+                let preview_url = `https://uiowa.instructure.com/courses/${classJson[i].id.slice(-6)}/assignments/${assignment.id}`
+                const file = {
+                    owner: userID,
+                    id: assignment.id,
+                    points_possible: assignment.points_possible,
+                    created_at: assignment.created_at,
+                    course_id: String(assignment.course_id),
+                    display_name: assignment.name,
+                    due_at: assignment.due_at,
+                    course_code: classJson[i].course_code,
+                    has_submitted_submissions: assignment.has_submitted_submissions,
+                    rawText: assignment.description ? assignment.description : 'null',
+                    summary: `{Assignment Name=${assignment.name}} for {Course Name = ${classJson[i].name}}. It is due on ${assignment.due_at} and is worth {${assignment.points_possible}} points.`,
+                    type: "assignment",
+                    preview_url: preview_url,
+                }
+                assignmentsArray.push(file);
+                const uploadedFile = await File.create(file);
+                const fileID = uploadedFile._id.toString();
+                await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+
+                const currEmbedding = await fetchEmbedding(JSON.stringify(file));
+                console.log('assignment embedding', currEmbedding.data[0].embedding);
+                records.push({ id: fileID, values: currEmbedding.data[0].embedding });
+
+            }
+        }
+    }
+
+    //Filter down the assignments to the ones that are due in 14 days
+    const today = new Date();
+    const fourteenDays = new Date(today.getTime() + (14 * 24 * 60 * 60 * 1000));
+    //make sure its between today and 14 days from now
+    const filteredFilesArray = assignmentsArray.filter(file => file.due_at && new Date(file.due_at) < fourteenDays && new Date(file.due_at) > today);
+    //Now exclude everything except assignment1Name, and dueDate
+    const filteredFilesArray2 = filteredFilesArray.map(file => {
+        return {
+            preview_url: file.preview_url,
+            assignmentName: file.display_name,
+            course_code: file.course_code,
+            dueDate: file.due_at
+        }
+    });
+    const dueDateFileRawText = filteredFilesArray2.map(assignment => 
+        `${assignment.course_code} - ${assignment.assignmentName} - due on ${assignment.dueDate}`
+    ).join('\n');
+    
+    let urls = []
+    for (let i = 0; i < filteredFilesArray2.length; i++){
+        urls.push([filteredFilesArray2[i].preview_url, filteredFilesArray2[i].assignmentName]);
+    }
+
+    // Create due date file
+    const dueDateFile = {
+        owner: userID,
+        preview_url: urls,
+        summary: `This file contains all assignments due in the next two weeks (14 days) and their due dates. It should be used to answer queries like what are all the assignments I have due this week? When is X assignment due? Make me a to do list of all my assignments next week`,
+        rawText: dueDateFileRawText,
+        type: "Upcoming assignments",
+        display_name: "Upcoming assignments",
+    }
+    const uploadedFile = await File.create(dueDateFile);
+    const fileID = uploadedFile._id.toString();
+    await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+
+    const currEmbedding = await fetchEmbedding(JSON.stringify(dueDateFile));
+    records.push({ id: fileID, values: currEmbedding.data[0].embedding });
+
+    await index.upsert(records);
 }
 
 /** 
- * TODO: Pull all files from Canvas, construct the File object, put it in DB under the newUser 
+ * This function pulls all the files + assignments from Canvas and stores them in the DB
  * Owner: Ilya 
  */
-postCanvasData = async (canvasToken) => {
-    const mongoClient = new MongoClient(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-    
-    const currentTerm = "Fall23" // This is the term that we're currently in, and the only one we want to pull files from, format: Fall23, Fall24, Spr23, Spr24
+async function postCanvasData(userID, canvasToken) {
+
 
     let startTime = Date.now();
-    // Connect to MongoDB
-    await mongoClient.connect()
-    const db = mongoClient.db('test');
-    const users = db.collection('users');
 
-    // Step 1: Pull classes from Canvas API
+    await User.findByIdAndUpdate(userID, { $set: { files: [] } }, { new: true });
+
     var myHeaders = new Headers();
     myHeaders.append("Authorization", `Bearer ${canvasToken}`);
     var requestOptions = {
@@ -135,166 +323,264 @@ postCanvasData = async (canvasToken) => {
     const classDataResponse = await fetch("https://canvas.instructure.com/api/v1/courses?per_page=1000", requestOptions);
     let jsonStr = await classDataResponse.text();
     const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+    let classJson = JSON.parse(modifiedStr);
 
-    let classJson = JSON.parse(modifiedStr); 
-
-    if (classDataResponse.status != 200){
+    if (classDataResponse.status != 200) {
         console.log(`Canvas enrollment data call ❌ ${classDataResponse.status}-${classDataResponse.statusText}`);
         return;
-    }
-    else{
+    } else {
         console.log(`Canvas enrollment data call: 200 ✅`);
     }
-    
-    // Push classJson to user's DB because we're data collection sluts
-    let mongoPushRes = await users.updateOne(
-        { canvasToken: canvasToken },
-        { $set: { classData: classJson } }
-    );
-    console.log(`Result from enrollment data push:`)
-    console.log(mongoPushRes);
 
-    // Iteratively request files for all classes
-    for(let i=0; i<classJson.length; i++){
+    await User.findByIdAndUpdate(userID, { $set: { classJson: classJson } });
+
+    console.log("Creating pinecone index..")
+    const pinecone = new Pinecone();
+    await pinecone.createIndex({
+        name: userID,
+        dimension: 1536,
+        waitUntilReady: true
+    });
+    const index = pinecone.index(userID);
+
+    let records = [];
+
+    // Pull users assignments
+    await pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index);
+    // Pull users assignments
+    await pullAnnouncements(userID, canvasToken, classJson, myHeaders, requestOptions, index);
+
+    const classProcessingPromises = classJson.map(async classItem => {
         try {
-            if(classJson[i].course_code.includes(currentTerm)){ // Important to catch only current classes, not past ones
-                // Make get request
-                let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/files`
+            if (classItem.course_code && classItem.course_code.includes(currentTerm)) {
+                let filesUrl = `https://canvas.instructure.com/api/v1/courses/${classItem.id}/files?per_page=1000`;
                 let fileDataResponse = await fetch(filesUrl, requestOptions);
-                let filesRes = JSON.parse(await fileDataResponse.text());
-                if (fileDataResponse.status != 200){
-                    continue;
-                } else{
-                    console.log(`✅ Canvas API call successful: 200-OK`);
-                }
-                console.log("Pulling content for " + classJson[i].course_code);
+                let jsonStr = await fileDataResponse.text();
+                let modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
+                let filesRes = JSON.parse(modifiedStr);
 
-                // Enrich our metadata with summary and raw text 
-                // MULTI THREADING
-                const BATCH_SIZE = 5;
-                let enrichedFiles = [];
-                for (let j = 0; j < filesRes.length; j += BATCH_SIZE) {
-                    const filesBatch = filesRes.slice(j, j + BATCH_SIZE);
-                    await processFilesBatch(filesBatch, classJson[i]);
-                    enrichedFiles = enrichedFiles.concat(filesBatch);
+                if (fileDataResponse.status != 200) {
+                    return;
                 }
+
+                console.log("Pulling content for " + classItem.course_code);
+                // console.log("filesRes", JSON.stringify(filesRes, null, 2));
+
+                // Process and enrich the files
+                const processedFiles = await processFilesBatch(filesRes, classItem);
+                // console.log('enrichedFiles', processedFiles);
 
                 // Push file metadata to DB
-                let mongoPushRes = await users.updateOne(
-                    { canvasToken: canvasToken }, 
-                    { $set: { ['files.' + classJson[i].id]: enrichedFiles } }
-                );
-                console.log(`Result from fileData push for ${classJson[i].course_code}:`)
-                console.log(mongoPushRes);
+                for (let j = 0; j < processedFiles.length; j++) {
+                    let currFile = processedFiles[j];
+                    if (currFile.created_at.startsWith("2023")) {
+                        currFile.owner = userID;
+                        currFile.preview_url = `https://uiowa.instructure.com/courses/${classItem.id.slice(-6)}/files?preview=${currFile.id}`
+                        delete currFile.id;
+                        const uploadedFile = await File.create(currFile);
+                        const fileid = uploadedFile._id.toString();
+                        await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
+
+                        const currEmbedding = await fetchEmbedding(JSON.stringify(currFile));
+                        console.log('course file embedding', currEmbedding.data[0].embedding);
+                        records.push({ id: fileid, values: currEmbedding.data[0].embedding });
+                    }
+                    // console.log('uploaded file', uploadedFile);
+                    // console.log('with this id', uploadedFile._id);
+                }
             }
-        } catch (error) {
-            // Some classes don't have files, so we catch the error and continue
-            console.log("Error with pulling files for class" + classJson[i].id + `[${classJson[i].course_code}]`)
-        }
-    }
+        } catch (e) { console.log("error processing class", e); }
+    });
+
+    // Wait for all classes to be processed
+    await Promise.all(classProcessingPromises);
+
+    await index.upsert(records);
+
     let endTime = Date.now();
     console.log("Total time: " + (endTime - startTime) + " milliseconds");
     return;
 }
 
-Routes.post('/upload', async (req, res) => {
+
+async function fetchEmbedding(input) {
+    const url = 'https://api.openai.com/v1/embeddings';
+    const data = {
+        input: input,
+        model: "text-embedding-ada-002"
+    };
+
     try {
-        const { canvasToken, files } = req.body;
-        // files doesn't seem right
-        for (const file of files) {
-            // save file to uploads directory
-            console.log(file);
-            const fileNameNoDot = file.name.split('.')[0];
-            const filePath = path.join(__dirname, 'userFiles', fileNameNoDot + file.md5 + '.pdf');
-            await file.mv(filePath);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        // const agent = new Agent(filePath, '', []);
-        // const plans = await agent.ready();
-        let foundUser = await user.findOne({ canvasToken });
-        res.json(foundUser);
+        const jsonData = await response.json();
+        console.log(jsonData);
+        return jsonData;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+
+
+Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
+
+    try {
+        var files = req.files.file;
+        //check if files in an arrray, if not make it an array
+        if (!Array.isArray(files)) {
+            files = [files];
+        }
+        // files doesn't seem right
+        const mongoFiles = [];
+        const fileIds = [];
+        for (const myfile of files) {
+            const fileNameNoDot = myfile.name.split('.')[0];
+            // const filePath = path.join(__dirname, 'userFiles', fileNameNoDot + myfile.md5 + '.pdf');
+            // await myfile.mv(filePath);
+            const dp = new DataProvider(res.userProfile._id.toString());
+            const uploadedFile = await dp.uploadFileToMongo(myfile);
+            mongoFiles.push({ name: uploadedFile.display_name, id: uploadedFile._id.toString() });
+            fileIds.push(uploadedFile._id.toString());
+            //const writePdf = await dp.createPdfFromMongoId(uploadedFile._id.toString(), 'data');
+        }
+        const foundUser = await User.findById(res.userProfile._id);
+        foundUser.personalFiles = foundUser.personalFiles.concat(fileIds);
+        await foundUser.save();
+        res.json({ files: mongoFiles });
     } catch (error) {
         console.error('Error processing file:', error);
         res.status(500).send('Server error');
     }
+}));
+
+
+Routes.post('/accountCreation', async (req, res) => {
+    const { idToken, email, name } = req.body;
+    const uid = randomStringToHash24Bits(idToken);
+    const foundUser = await User.findById(uid);
+    if (!foundUser) {
+        const newUser = new User({ _id: uid, email: email, name: name })
+        await newUser.save();
+    }
+    const token = jwt.sign({ _id: uid, }, process.env.JWT_PRIVATE_KEY, { expiresIn: "1000d" });
+    res.status(200).send({ token: token, message: 'Login successful' });
 });
 
 
-Routes.post('/answer', async (req, res) => {
-    const { canvasToken, prompt } = req.body;
-
-    console.log('we are hitting');
-    console.log(canvasToken);
-    console.log(prompt);
-
-    const foundUser = await user.findOne({ canvasToken });
-    foundUser.questions.push(prompt);
-    await foundUser.save();
-
-    res.json(foundUser);
-
-    // console.log('we are hitting');
+Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
+    const { prompt } = req.body;
+    console.log('Formulating response...');
     // console.log(canvasToken);
     // console.log(prompt);
 
-    // // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
-    // const kMostRelevant = getTopKRelevant(prompt, canvasToken, k);
+    // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
+    const kMostRelevant = await getTopKRelevant(prompt, res.userProfile, process.env.KFILES); // Json array of file metadata
+    // for (file in kMostRelevant){
+    //     const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
+    //     if (file.rawText){
+    //         const fileText = file.rawText;
+    //         if (!fs.existsSync(`./data/${canvasToken}`)){
+    //             fs.mkdirSync(`./data/${canvasToken}`);
+    //         }
+    //         fs.writeFileSync(`./data/${canvasToken}/${fileName}`, fileText);
+    //     }
+    // }
 
-    // downloadPDFs(kMostRelevant);
-
-    // const documents = await new SimpleDirectoryReader().loadData({directoryPath: "./data"});
+    // let documents = []
+    // for (file in kMostRelevant){
+    //     let fileMetaData = file;
+    //     delete fileMetaData.rawText;
+    //     documents.append(new Document({text:file.rawText, metadata: fileMetaData}))
+    // }
     // console.log(documents);
 
-    // const index = await VectorStoreIndex.fromDocuments(documents);
+    let documents = [];
+    let sources = [];
+    let sourceTitles = [];
+    console.log("kMostRelevantFiles", kMostRelevant);
+    for (let i = 0; i < kMostRelevant.length; i++) {
+        const id = kMostRelevant[i];
+        const dp = new DataProvider(res.userProfile._id.toString());
+        // console.log(file.id);
+        let rawText = await dp.fetchRawTextOfFile(id); // ??
+        // console.log(rawText + '\n');
+        try {
+            const source = await dp.fetchURL(id);
+            if(Array.isArray(source)){
+                console.log("PREVIEWS", source);
+                for (let s of source){
+                    sources.push(s[0]);
+                    console.log("URL", s[0]);
+                    sourceTitles.push(s[1]);
+                }
+            } else{
+                sources.push(source);
+                const title = await dp.fetchTitle(id);
+                sourceTitles.push(title);
+            }
+        } catch (e) { }
+        let combinedText = await dp.fetchTitle(id) + await dp.fetchSummary(id) + rawText;
+        console.log(combinedText);
+        documents.push(new Document({ text: combinedText }));
+    }
 
-    // const queryEngine = index.asQueryEngine();
-    // const response = await queryEngine.query(
-    //     prompt,
-    // );
+    // Specify LLM model
+    const serviceContext = serviceContextFromDefaults({
+        llm: new OpenAI({ model: "gpt-4", temperature: 0 }),
+    });
 
-    // console.log(response.toString());    
+    // console.log(documents);
+    const index = await SummaryIndex.fromDocuments(documents, { serviceContext });
 
-    // const foundUser = await user.findOne({ canvasToken });
-    // foundUser.questions.push([prompt, response]);
-    // await foundUser.save();
+    const queryEngine = index.asQueryEngine();
+    const response = await queryEngine.query(
+        prompt,
+    );
 
-});
+    const answer = response.toString();
 
-getTopKRelevant = async (query, canvasToken, k) => {
-    const dataProvider = new DataProvider(canvasToken);
-    const canvasFiles = await dataProvider.getCanvasFiles();
+    let allSources = [];
+    for (let i = 1; i <= sources.length; i++) {
+        allSources.push({ number: i, url: sources[i - 1], title: sourceTitles[i - 1] });
+    }
+
+    const foundUser = await User.findById(res.userProfile._id.toString());
+    foundUser.questions.push(prompt);
+    foundUser.responses.push(answer);
+    await foundUser.save();
+
+    res.json({ finalAnswer: answer, sources: allSources });
+}));
+
+getTopKRelevant = async (query, user, k) => {
+    const dataProvider = new DataProvider(user._id.toString());
+    const canvasFiles = await dataProvider.getCanvasFileMetadata(false);
+
+    // console.log('canvasFiles', canvasFiles);
     const personalFiles = await dataProvider.getPersonalFiles();
-    const UIFiles = await dataProvider.getUIFiles();
-
-    const allFiles = canvasFiles.concat(personalFiles).concat(UIFiles);
-
+    // const collegeFiles = await dataProvider.getCollegeFiles();
+    console.log('personalFiles', personalFiles);
+    const allFiles = canvasFiles.concat(personalFiles);
+    // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
+    console.log(allFiles.length);
     const proompter = new Proompter();
-    const topKIndices = proompter.pickTopKFiles(allFiles, query, k);
-    let topKFiles = [];
-    topKIndices.forEach(index => topKFiles.push(allFiles[index]));
-
-    return topKIndices;
+    const topKIds = await proompter.pickTopKFiles(allFiles, query, k, user._id.toString());
+    console.log(topKIds);
+    return topKIds;
 }
 
-
-Routes.post('/test', async (req, res) => {
-    downloadPDFs(req.body.files);
-});
-
-downloadPDFs = async(files) => {
-    console.log(files);
-    files.forEach(file = async() => {
-    var requestOptions = {
-        method: 'GET',
-        redirect: 'follow'
-    };
-
-    let response = await fetch(file.url, requestOptions);
-    // download PDFs from url
-    // override whatever is in ./data
-    })
-
-}
 
 Routes.use((err, req, res, next) => {
     console.log(err); // Log the stack trace of the error
