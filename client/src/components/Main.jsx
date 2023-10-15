@@ -157,7 +157,7 @@ export function Main() {
 
   if (version === 'chatWindow') {
     return (
-      <div className="h-full py-2">
+      <div className="h-full py-2 w-full">
         <div className="mx-auto flex h-full max-w-7xl flex-col items-center justify-between">
           <div
             ref={myRef}
@@ -183,15 +183,15 @@ export function Main() {
 
   if (version === 'firstQuestion') {
     return (
-      <div className="py-10 h-full flex justify-center flex-col items-start gap-10">
+      <div className="py-10 w-full h-full flex justify-center flex-col items-center gap-10">
         <header>
           <div className="mx-auto max-w-7xl">
-            <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">What are you wondering?</h1>
+            <h1 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight text-gray-900">What are you wondering?</h1>
           </div>
         </header>
         <main className='w-full'>
           <div className="mx-auto max-w-7xl my-10">
-            <div className="w-full h-[70%] flex flex-col items-center justify-center">
+            <div className="min-w-full h-[70%] flex flex-col items-center justify-center">
               <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`} />
             </div>
           </div>
