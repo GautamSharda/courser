@@ -1,4 +1,4 @@
-import React from 'react';
+import {useState, useEffect} from 'react';
 
 // const dummyData = {
 //     plans: [
@@ -28,12 +28,13 @@ import React from 'react';
 //setPlans([{"type": "AI", "plans": res.courses, "text": "", "startText": "We thought theses courses would fit well for you next semester", "endText": "Do you have any suggestions to this list" }]);
 
 export function AIResponse({ response }) {
+
   const { subject, text, type, sources } = response;
   if (type == "AI") {
     return (
-      <div className="responseContainer">
+      <div className="flex flex-col rounded-br-xl rounded-tr-xl w-full md:w-[600px] bg-[#f0f0f0] py-2 px-4 mb-4">
         {text.split('\n').map((item, i) => (
-          <p key={i}>
+          <p key={i} className='text-md'>
             {item}
             <br />
           </p>
@@ -41,7 +42,10 @@ export function AIResponse({ response }) {
         <br />
 
         {sources.map((source, i) => (
-          <p className="overflow-hidden w-full text-ellipsis whitespace-nowrap">
+          <p
+            className="w-full overflow-hidden text-ellipsis whitespace-nowrap"
+            key={i}
+          >
             <strong>Source {source.number}:</strong>{' '}
             <u className="opacity-100 transition duration-200 hover:opacity-60">
               <a href={source.url} target="_blank">

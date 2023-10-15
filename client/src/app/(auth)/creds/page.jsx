@@ -10,7 +10,7 @@ import { Main } from '@/components/Main'
 
 function Creds() {
   return (
-    <div className="h-screen flex flex-col justify-between items-center">
+    <div className="min-h-screen flex flex-col justify-between items-center">
       <nav className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between">

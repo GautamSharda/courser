@@ -10,6 +10,7 @@ import Dropdown from './Dropdown';
 import ToolTip from './ToolTip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import Cooking from './Cooking';
 
 import constants from '@/helpers/constants';
 import { redirect } from 'next/dist/server/api-utils';
@@ -19,6 +20,7 @@ export function Main() {
   const [isLoading, setIsLoading] = useState(true);
   const [messages, addMessage] = messagesHook();
   const [showYTModal, setShowYTModal] = useState(false);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
 
   const myRef = useRef(null);
 
@@ -73,6 +75,7 @@ export function Main() {
 
   const sendNextQuestion = async (nextQuestion) => {
     scrollToBottom();
+    setIsLoadingResponse(true);
     const nxtValue = { "type": "human", "text": nextQuestion }
     addMessage([{ ...nxtValue }], scrollToBottom);
     const data = new FormData();
@@ -84,6 +87,9 @@ export function Main() {
     });
     const res = await response.json();
     addMessage([{ ...nxtValue }, { "type": "AI", "text": res.finalAnswer, "sources": res.sources }], scrollToBottom);
+    setIsLoadingResponse(false);
+    // scroll to bottom of chat window
+    scrollToBottom();
   }
 
   const handleFileUpload = async (e) => {
@@ -147,25 +153,29 @@ export function Main() {
 
   if (isLoading) return <Loader />;
 
-  console.log(messages);
+  console.log("messages: ", messages);
 
   if (version === 'chatWindow') {
     return (
-      <div className="py-8 h-[90%]">
-        <div className="mx-auto max-w-7xl h-full flex flex-col items-center justify-between">
-          <div style={{
-            alignItems: 'center',
-            flexDirection: 'column',
-            display: 'flex',
-            justifyContent: 'flex-start',
-          }}
+      <div className="h-full py-2">
+        <div className="mx-auto flex h-full max-w-7xl flex-col items-center justify-between">
+          <div
             ref={myRef}
-            className='w-full flex-col items-center justify-center h-[80%] overflow-auto'>
+            className="flex h-full w-full flex-col items-center justify-start overflow-auto px-12 md:w-[600px] md:px-0"
+          >
             {messages.map((response, i) => {
-              return (<AIResponse response={response} key={i} />)
+              return <AIResponse response={response} key={i} />
             })}
+            {isLoadingResponse ? (
+              <Cooking/>
+            ) : null}
           </div>
-          <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`Follow up`} />
+          <CommentForm
+            sendNextQuestion={sendNextQuestion}
+            file={file}
+            addFile={handleFileUpload}
+            placeholder={`Follow up`}
+          />
         </div>
       </div>
     )
@@ -230,7 +240,7 @@ export function Main() {
 function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) {
   const [nextQuestion, setNextQuestion] = useState('');
   return (
-    <div className="flex items-start space-x-4 w-[90%] md:w-[600px]">
+    <div className="flex items-start space-x-4 w-[90%] md:w-[600px] sticky bottom-0 right-0 bg-white pt-2">
       <div className="min-w-0 flex-1">
         <div>
           <div className="border-b border-gray-200 focus-within:border-iowaYellow-600">
