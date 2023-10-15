@@ -145,6 +145,7 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
     let allAnnouncementsFile =
     {
         owner: userID,
+        preview_url: [],
         display_name: "AllRecentAnnouncements",
         summary: `This file contains all the announcements made across all courses in the past 7 days. 
     It could be used to answer queries like what are my most recent announcements? Any new announcements made in X class? 
@@ -152,7 +153,7 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
         rawText: ""
     };
     let records = [];
-    let rawTextLines = [];
+    let recentAnnouncementFiles = [];
     for (i in classJson) {
         if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)) {
             console.log("Pulling announcements for " + classJson[i].course_code)
@@ -187,7 +188,8 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
 
                     // Check if the createdAtDate is within the last 7 days
                     if (createdAtDate >= sevenDaysAgo && createdAtDate <= currentDate) {
-                        rawTextLines.push(JSON.stringify(file) + "\n");
+                        recentAnnouncementFiles.push(file);
+                        allAnnouncementsFile.preview_url.push([file.preview_url, file.display_name]);
                     }
                 } catch (e) { console.log('error putting this in allAnnouncementsSummary', e); }
 
@@ -201,16 +203,15 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
             }
         }
     }
-    let combinedRawText = "";
-    console.log(rawTextLines);
-    for (lines in rawTextLines) {
-        combinedRawText += rawTextLines[lines];
-    }
-    allAnnouncementsFile.rawText = combinedRawText;
-    console.log(allAnnouncementsFile);
+
+    allAnnouncementsFile.rawText = JSON.stringify(recentAnnouncementFiles);
+    // console.log(allAnnouncementsFile);
     const uploadedAllAnnouncementsFile = await File.create(allAnnouncementsFile);
     const allAnnouncementsFileID = uploadedAllAnnouncementsFile._id.toString();
     await User.findByIdAndUpdate(userID, { $push: { files: allAnnouncementsFileID } });
+
+    const currEmbedding = await fetchEmbedding(JSON.stringify(allAnnouncementsFile));
+    records.push({ id: allAnnouncementsFileID, values: currEmbedding.data[0].embedding });
 
     await index.upsert(records);
 }
@@ -257,7 +258,6 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
             }
         }
     }
-    await index.upsert(records);
 
     //Filter down the assignments to the ones that are due in 14 days
     const today = new Date();
@@ -267,6 +267,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     //Now exclude everything except assignment1Name, and dueDate
     const filteredFilesArray2 = filteredFilesArray.map(file => {
         return {
+            preview_url: file.preview_url,
             assignmentName: file.display_name,
             course_code: file.course_code,
             dueDate: file.due_at
@@ -276,9 +277,15 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
         `${assignment.course_code} - ${assignment.assignmentName} - due on ${assignment.dueDate}`
     ).join('\n');
     
+    let urls = []
+    for (let i = 0; i < filteredFilesArray2.length; i++){
+        urls.push([filteredFilesArray2[i].preview_url, filteredFilesArray2[i].assignmentName]);
+    }
+
     // Create due date file
     const dueDateFile = {
         owner: userID,
+        preview_url: urls,
         summary: `This file contains all assignments due in the next two weeks (14 days) and their due dates. It should be used to answer queries like what are all the assignments I have due this week? When is X assignment due? Make me a to do list of all my assignments next week`,
         rawText: dueDateFileRawText,
         type: "Upcoming assignments",
@@ -287,6 +294,11 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     const uploadedFile = await File.create(dueDateFile);
     const fileID = uploadedFile._id.toString();
     await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
+
+    const currEmbedding = await fetchEmbedding(JSON.stringify(dueDateFile));
+    records.push({ id: fileID, values: currEmbedding.data[0].embedding });
+
+    await index.upsert(records);
 }
 
 /** 
@@ -506,9 +518,18 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
         // console.log(rawText + '\n');
         try {
             const source = await dp.fetchURL(id);
-            sources.push(source);
-            const title = await dp.fetchTitle(id);
-            sourceTitles.push(title);
+            if(Array.isArray(source)){
+                console.log("PREVIEWS", source);
+                for (let s of source){
+                    sources.push(s[0]);
+                    console.log("URL", s[0]);
+                    sourceTitles.push(s[1]);
+                }
+            } else{
+                sources.push(source);
+                const title = await dp.fetchTitle(id);
+                sourceTitles.push(title);
+            }
         } catch (e) { }
         let combinedText = await dp.fetchTitle(id) + await dp.fetchSummary(id) + rawText;
         console.log(combinedText);
