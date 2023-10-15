@@ -469,7 +469,7 @@ Routes.post('/accountCreation', async (req, res) => {
 
 Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     const { prompt } = req.body;
-    console.log('we are hitting');
+    console.log('Formulating response...');
     // console.log(canvasToken);
     // console.log(prompt);
 
@@ -496,6 +496,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
 
     let documents = [];
     let sources = [];
+    let sourceTitles = [];
     console.log("kMostRelevantFiles", kMostRelevant);
     for (let i = 0; i < kMostRelevant.length; i++) {
         const id = kMostRelevant[i];
@@ -506,6 +507,8 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
         try {
             const source = await dp.fetchURL(id);
             sources.push(source);
+            const title = await dp.fetchTitle(id);
+            sourceTitles.push(title);
         } catch (e) { }
         let combinedText = await dp.fetchTitle(id) + await dp.fetchSummary(id) + rawText;
         console.log(combinedText);
@@ -529,7 +532,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
 
     let allSources = [];
     for (let i = 1; i <= sources.length; i++) {
-        allSources.push({ number: i, url: sources[i - 1] });
+        allSources.push({ number: i, url: sources[i - 1], title: sourceTitles[i - 1] });
     }
 
     const foundUser = await User.findById(res.userProfile._id.toString());

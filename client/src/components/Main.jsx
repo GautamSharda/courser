@@ -27,7 +27,6 @@ export function Main() {
     if (messages.length === 0) return 'firstQuestion';
     return 'chatWindow'
   }
-  console.log('asdfdsfs');
   const version = getVersion();
 
   const file = (user && user.personalFiles) ? user.personalFiles : [];
@@ -38,7 +37,6 @@ export function Main() {
     setIsLoading(false);
     if (res) setUser({ ...res.user });
   };
-  console.log('asdf')
 
   useEffect(() => {
     auth();
@@ -192,18 +190,18 @@ export function Main() {
     );
   }
   return (
-    <div className="py-10 h-[80%] flex flex-col items-center justify-center">
+    <div className="py-10 h-[80%] flex flex-col items-center justify-center w-full">
       {showYTModal ?
-        <div className="absolute z-10 overflow-y-auto p-5 bg-iowaYellow-500 rounded-lg flex justify-center items-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div className="absolute z-10 w-[90%] md:w-auto overflow-y-auto p-5 bg-iowaYellow-500 rounded-lg flex justify-center items-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           <iframe width="600" height="400" src="https://www.youtube.com/embed/phzp5RBNYNs?si=o8z-dcrt7M-HjUYH" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
         </div>
         : null}
       <header>
-        <div className="mx-auto max-w-7xl">
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900">What is your Canvas Token</h1>
+        <div className="mx-auto text-center">
+          <h1 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight text-gray-900">What is your Canvas Token</h1>
         </div>
       </header>
-      <main className='h-full'>
+      <main className='h-full w-full'>
         <div className="mx-auto max-w-7xl h-full">
           <div className="w-full h-[70%] flex flex-col items-center justify-center">
             <CommentForm
@@ -248,7 +246,7 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) 
             {file && (
               <div className="flex items-center space-x-5">
                 <div className="flow-root">
-                  <label htmlFor="fileInput" type="button" className="-m-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500">
+                  <label htmlFor="fileInput" type="button" className="-m-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500 cursor-pointer">
                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
                     </svg>

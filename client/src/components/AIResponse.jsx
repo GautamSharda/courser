@@ -39,7 +39,7 @@ export function AIResponse({ response }) {
 
         {sources.map((source, i) => (
           <p>
-            <strong>Source {source.number}:</strong> <u className='opacity-100 hover:opacity-60 transition duration-200'><a href={source.url} target="_blank">{source.url}</a></u>
+            <strong>Source {source.number}:</strong> <u className='opacity-100 hover:opacity-60 transition duration-200'><a href={source.url} target="_blank">{source.title}</a></u>
           </p>
         ))}
       </div>
