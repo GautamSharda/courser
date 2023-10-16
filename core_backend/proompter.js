@@ -35,7 +35,7 @@ class Proompter {
             }
 
             const jsonData = await response.json();
-            console.log(jsonData);
+            // console.log(jsonData);
             return jsonData;
         } catch (error) {
             console.error('Error:', error);
@@ -43,6 +43,7 @@ class Proompter {
         }
       
       pickTopKFiles = async (files, query, k, userid) => {
+        // new search
         const queryEmbedding = await this.getQueryEmbedding(query);
         const pinecone = new Pinecone();      
         const index = pinecone.Index(userid);
@@ -52,7 +53,6 @@ class Proompter {
         for (let i = 0; i < matches.length; i++){
             topKIds.push(matches[i].id);
         }
-        console.log(topKIds);
         return topKIds;
 
         // previous search
