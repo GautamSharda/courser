@@ -159,50 +159,50 @@ export function Main() {
 
   console.log("messages: ", messages);
 
-  // if (version === 'chatWindow') {
-  //   return (
-  //     <div className="h-full py-2 w-full">
-  //       <div className="mx-auto flex h-full max-w-7xl flex-col items-center justify-between">
-  //         <div
-  //           ref={myRef}
-  //           className="flex h-full w-full flex-col items-center justify-start overflow-auto px-12 md:w-[600px] md:px-0"
-  //         >
-  //           {messages.map((response, i) => {
-  //             return <AIResponse response={response} key={i} />
-  //           })}
-  //           {isLoadingResponse ? (
-  //             <Cooking/>
-  //           ) : null}
-  //         </div>
-  //         <CommentForm
-  //           sendNextQuestion={sendNextQuestion}
-  //           file={file}
-  //           addFile={handleFileUpload}
-  //           placeholder={`Follow up`}
-  //         />
-  //       </div>
-  //     </div>
-  //   )
-  // }
+  if (version === 'chatWindow') {
+    return (
+      <div className="h-full py-2 w-full">
+        <div className="mx-auto flex h-full max-w-7xl flex-col items-center justify-between">
+          <div
+            ref={myRef}
+            className="flex h-full w-full flex-col items-center justify-start overflow-auto px-12 md:w-[600px] md:px-0"
+          >
+            {messages.map((response, i) => {
+              return <AIResponse response={response} key={i} />
+            })}
+            {isLoadingResponse ? (
+              <Cooking/>
+            ) : null}
+          </div>
+          <CommentForm
+            sendNextQuestion={sendNextQuestion}
+            file={file}
+            addFile={handleFileUpload}
+            placeholder={`Follow up`}
+          />
+        </div>
+      </div>
+    )
+  }
 
-  // if (version === 'firstQuestion') {
-  //   return (
-  //     <div className="py-10 w-full h-full flex justify-center flex-col items-center gap-10">
-  //       <header>
-  //         <div className="mx-auto max-w-7xl">
-  //           <h1 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight text-gray-900">What are you wondering?</h1>
-  //         </div>
-  //       </header>
-  //       <main className='w-full'>
-  //         <div className="mx-auto max-w-7xl my-10">
-  //           <div className="min-w-full h-[70%] flex flex-col items-center justify-center">
-  //             <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`} />
-  //           </div>
-  //         </div>
-  //       </main>
-  //     </div>
-  //   );
-  // }
+  if (version === 'firstQuestion') {
+    return (
+      <div className="py-10 w-full h-full flex justify-center flex-col items-center gap-10">
+        <header>
+          <div className="mx-auto max-w-7xl">
+            <h1 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight text-gray-900">What are you wondering?</h1>
+          </div>
+        </header>
+        <main className='w-full'>
+          <div className="mx-auto max-w-7xl my-10">
+            <div className="min-w-full h-[70%] flex flex-col items-center justify-center">
+              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`} />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
   return (
     <div className="flex h-[80%] w-full flex-col items-center justify-center py-10">
       {showYTModal ? (
