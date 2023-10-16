@@ -230,7 +230,7 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
 }
 
 async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index) {
-    // Pull users assignments
+    // Pull user's assignments
     let records = [];
     let assignmentsArray = [];
     for(i in classJson){
