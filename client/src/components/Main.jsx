@@ -70,8 +70,10 @@ export function Main() {
       console.log('response');
       console.log(res);
       setUser({ ...user, canvasToken: res.user.canvasToken });
-    }else{
+    }else if (response.status==401){
       alert('Invalid Canvas Token');
+    }else{
+      alert('An error occured setting up your account');
     }
     setIsLoading(false);
 
