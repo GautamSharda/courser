@@ -122,6 +122,7 @@ async function processFilesBatch(filesBatch, course) {
     const processedFilesPromises = pdfFiles.map(async file => {
         file.course_code = course.course_code;
         file.course_name = course.name;
+        file.type = "course";
 
         try {
             const [summary, rawText] = await processFile(file.url, { fileName: file.display_name, created_at: file.created_at });
@@ -150,7 +151,8 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
         summary: `This file contains all the announcements made across all courses in the past 7 days. 
     It could be used to answer queries like what are my most recent announcements? Any new announcements made in X class? 
     What are all the announcements made this week? Give me a summary of my recent announcements.`,
-        rawText: ""
+        rawText: "",
+        type: "AllRecentAnnouncements"
     };
     let records = [];
     let recentAnnouncementFiles = [];
@@ -507,34 +509,54 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     // console.log(documents);
 
     let documents = [];
-    let sources = [];
-    let sourceTitles = [];
+    let allSources = [];
     console.log("kMostRelevantFiles", kMostRelevant);
+    let numberOfURLs = 0;
     for (let i = 0; i < kMostRelevant.length; i++) {
-        const id = kMostRelevant[i];
-        const dp = new DataProvider(res.userProfile._id.toString());
-        // console.log(file.id);
-        let rawText = await dp.fetchRawTextOfFile(id); // ??
-        // console.log(rawText + '\n');
         try {
-            const source = await dp.fetchURL(id);
-            if(Array.isArray(source)){
-                console.log("PREVIEWS", source);
-                for (let s of source){
-                    sources.push(s[0]);
-                    console.log("URL", s[0]);
-                    sourceTitles.push(s[1]);
+            const id = new ObjectId(kMostRelevant[i]);
+            const file = await File.findById(id);
+            const rawText = file.rawText;
+            const title = file.display_name;
+            const summary = file.summary;
+            const type = file.type;
+            let URL = file.preview_url;
+            console.log(type);
+            if (type === "personal"){
+                let buffer = URL;
+                const base64Data = buffer.toString('base64');
+                URL = `data:application/pdf;base64,${base64Data}`;
+                console.log("REACHED URL", URL);
+            }
+            if(Array.isArray(URL)){
+                // console.log("PREVIEWS", URL);
+                for (let u of URL){
+                    let s = {}
+                    console.log(u)
+                    numberOfURLs++;
+                    s.number = numberOfURLs;
+                    s.title = u[1];
+                    s.url = u[0];
+                    s.type = type;
+                    allSources.push(s);
                 }
             } else{
-                sources.push(source);
-                const title = await dp.fetchTitle(id);
-                sourceTitles.push(title);
+                let s = {}
+                numberOfURLs++;
+                s.number = numberOfURLs;
+                s.title = title;
+                s.url = URL;
+                s.type = type;
+                allSources.push(s);
             }
-        } catch (e) { }
-        let combinedText = await dp.fetchTitle(id) + await dp.fetchSummary(id) + rawText;
-        console.log(combinedText);
-        documents.push(new Document({ text: combinedText }));
+            let combinedText = title + summary + rawText;
+            // console.log(combinedText);
+            // console.log(combinedText);
+            documents.push(new Document({ text: combinedText }));    
+        } catch (e) { console.log(e); }
     }
+
+    fsNormal.writeFileSync("./dumps/allSources.json", JSON.stringify(allSources))
 
     // Specify LLM model
     const serviceContext = serviceContextFromDefaults({
@@ -550,11 +572,6 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     );
 
     const answer = response.toString();
-
-    let allSources = [];
-    for (let i = 1; i <= sources.length; i++) {
-        allSources.push({ number: i, url: sources[i - 1], title: sourceTitles[i - 1] });
-    }
 
     const foundUser = await User.findById(res.userProfile._id.toString());
     foundUser.questions.push(prompt);

@@ -234,7 +234,7 @@ class DataProvider{
       endTime = Date.now();
       // console.log("Query took " + (endTime - startTime) + " milliseconds");
     
-      const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text, owner: this.userID}); 
+      const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text, owner: this.userID, type: "personal", preview_url: actualBuffer}); 
       
       const pinecone = new Pinecone();
       const ind = pinecone.index(this.userID);      

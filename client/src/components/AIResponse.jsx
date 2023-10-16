@@ -48,9 +48,9 @@ export function AIResponse({ response }) {
           >
             <strong>Source {source.number}:</strong>{' '}
             <u className="opacity-100 transition duration-200 hover:opacity-60">
-              <a href={source.url} target="_blank">
-                {source.title}
-              </a>
+            {source.type === "personal" ? (<a href={source.url} download={source.title}>{source.title}</a>) 
+              : 
+              (<a href={source.url} target="_blank" rel="noopener noreferrer">{source.title}</a>)}            
             </u>
           </p>
         ))}
