@@ -61,8 +61,10 @@ export function Main() {
       method: 'POST',
       body: data,
       headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
-
     });
+
+    // Response is 401 if user's token is invalid  
+
     if (response.ok) {
       const res = await response.json();
       console.log('response');

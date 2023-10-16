@@ -30,6 +30,23 @@ const currentTerm = "Fall23"; // This is the term that we're currently in
 Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
     const { canvasToken } = req.body;
     const foundUser = await User.findById(res.userProfile._id);
+
+    // Validate user token
+    var myHeaders = new Headers();
+    myHeaders.append("Authorization", `Bearer ${canvasToken}`);
+    var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+
+    const classDataResponse = await fetch("https://canvas.instructure.com/api/v1/courses?per_page=1", requestOptions);
+
+    if (classDataResponse.status==401){
+        return res.status(401).send('Invalid Canvas token');
+    }
+
+    // User token is valid, proceed
     foundUser.canvasToken = canvasToken;
     await foundUser.save();
     await postCanvasData(res.userProfile._id.toString(), canvasToken);
