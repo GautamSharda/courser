@@ -552,7 +552,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
 
     // Specify LLM model
     const serviceContext = serviceContextFromDefaults({
-        llm: new OpenAI({ model: "gpt-4", temperature: 0 }),
+        llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
     });
 
     // Indexing
@@ -578,7 +578,7 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     console.log("Total answer time: " + (endTime2 - startTime2) + " milliseconds");
     console.log('-------------------');
     console.log(`Answer: ${answer}`);
-    console.log(`Sources: \n${sources.join('\n')}`);
+    console.log(`Sources: \n${allSources.join('\n')}`);
     console.log('-------------------');
 }));
 

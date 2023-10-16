@@ -205,7 +205,7 @@ class DataProvider{
       
       let actualBuffer = Buffer.from(file.data);
       let data = await pdf(actualBuffer);
-      console.log(data.text);
+      // console.log(data.text);
 
       let document = new Document({ text: data.text });
 
@@ -230,7 +230,7 @@ class DataProvider{
       const ind = pinecone.index(this.userID);      
       const stringToVectorize = `${file.name}. ${response.toString()}. ${data.text}.`   
       const currEmbedding = await this.fetchEmbedding(stringToVectorize);
-      console.log('personal file embedding', currEmbedding.data[0].embedding);
+      // console.log('personal file embedding', currEmbedding.data[0].embedding);
       await ind.upsert([{id:newFile._id.toString(), values: currEmbedding.data[0].embedding}]);
 
       return newFile;
