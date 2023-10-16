@@ -48,7 +48,6 @@ class DataProvider{
 
     fetchRawTextOfFile = async(id) => {
       let objid = new ObjectId(id);
-      console.log(objid);
       const file = await File.findById(objid);
       if (file){
         return file.rawText;
@@ -59,7 +58,6 @@ class DataProvider{
 
     fetchSummary = async(id) => {
       let objid = new ObjectId(id);
-      console.log(objid);
       const file = await File.findById(objid);
       if (file){
         return file.summary;
@@ -70,7 +68,6 @@ class DataProvider{
 
     fetchTitle = async(id) => {
       let objid = new ObjectId(id);
-      console.log(objid);
       const file = await File.findById(objid);
       if (file){
         return file.display_name;
@@ -81,7 +78,6 @@ class DataProvider{
 
     fetchURL = async(id) => {
       let objid = new ObjectId(id);
-      console.log(objid);
       const file = await File.findById(objid);
       if (file){
         return file.preview_url ? file.preview_url : file.display_name;
@@ -126,9 +122,9 @@ class DataProvider{
                 },
                 { $limit: 10 }
         ]);
-        console.log(cursor);
+        // console.log(cursor);
         const documents = await cursor.toArray(); 
-        console.log(documents);
+        // console.log(documents);
         return documents;
     }
 
@@ -197,7 +193,7 @@ class DataProvider{
       }
   
       const jsonData = await response.json();
-      console.log(jsonData);
+      // console.log(jsonData);
       return jsonData;
     } catch (error) {
       console.error('Error:', error);
@@ -219,20 +215,14 @@ class DataProvider{
       });
   
       // Indexing 
-      let startTime = Date.now();
       const index = await SummaryIndex.fromDocuments([document], {serviceContext}); // LlamaIndex embedding
       // let index = await fetchEmbedding(document.text); // Openai embedding
-      let endTime = Date.now();
-      // console.log("Indexing took " + (endTime - startTime) + " milliseconds");
   
       // Query the index
-      startTime = Date.now();
       const queryEngine = index.asQueryEngine();
       const response = await queryEngine.query(
           summaryPrompt,
       );
-      endTime = Date.now();
-      // console.log("Query took " + (endTime - startTime) + " milliseconds");
     
       const newFile = await File.create({buffer: actualBuffer, display_name: file.name, summary: response.toString(), rawText: data.text, owner: this.userID, type: "personal", preview_url: actualBuffer}); 
       
@@ -275,11 +265,9 @@ class DataProvider{
     getPersonalFiles = async() => {
       const user = await User.findById(this.userID);
       const personalFileIDs = user.personalFiles;
-      console.log(personalFileIDs);
       let personalFiles = [];
       for (let i = 0; i < personalFileIDs.length; i++){
         let id = mongoose.Types.ObjectId(personalFileIDs[i]);
-        console.log(id);
         const personalFileDoc = await File.findById(id);
         const personalFile = personalFileDoc.toObject();
         delete personalFile.buffer;

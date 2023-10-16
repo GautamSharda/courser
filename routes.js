@@ -22,6 +22,7 @@ const { MongoClient } = require('mongodb');
 const fsNormal = require('fs');
 const { ObjectId } = require("mongodb");
 const { Pinecone } = require("@pinecone-database/pinecone");
+const moment = require('moment-timezone');
 
 // Important constants
 const currentTerm = "Fall23"; // This is the term that we're currently in
@@ -30,6 +31,23 @@ const currentTerm = "Fall23"; // This is the term that we're currently in
 Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
     const { canvasToken } = req.body;
     const foundUser = await User.findById(res.userProfile._id);
+
+    // Validate user token
+    var myHeaders = new Headers();
+    myHeaders.append("Authorization", `Bearer ${canvasToken}`);
+    var requestOptions = {
+        method: 'GET',
+        headers: myHeaders,
+        redirect: 'follow'
+    };
+
+    const classDataResponse = await fetch("https://canvas.instructure.com/api/v1/courses?per_page=1", requestOptions);
+
+    if (classDataResponse.status==401){
+        return res.status(401).send('Invalid Canvas token');
+    }
+
+    // User token is valid, proceed
     foundUser.canvasToken = canvasToken;
     await foundUser.save();
     await postCanvasData(res.userProfile._id.toString(), canvasToken);
@@ -73,13 +91,11 @@ async function processFile(fileUrl, metadata) {
         responseType: 'arraybuffer',  // Important
     });
     let endTime = Date.now();
-    // console.log("Requesting file took " + (endTime - startTime) + " milliseconds");
 
     // Create Document object 
     startTime = Date.now();
     let data = await pdf(axiosResponse.data); // I hate this shit it prints warnings every time
     endTime = Date.now();
-    // console.log("Parsing PDF took " + (endTime - startTime) + " milliseconds");
     let document = new Document({ text: data.text, metadata: metadata });
 
     // Specify LLM model
@@ -92,7 +108,6 @@ async function processFile(fileUrl, metadata) {
     const index = await SummaryIndex.fromDocuments([document], { serviceContext }); // LlamaIndex embedding
     // let index = await fetchEmbedding(document.text); // Openai embedding
     endTime = Date.now();
-    // console.log("Indexing took " + (endTime - startTime) + " milliseconds");
 
     // Query the index
     startTime = Date.now();
@@ -101,7 +116,6 @@ async function processFile(fileUrl, metadata) {
         summaryPrompt,
     );
     endTime = Date.now();
-    // console.log("Query took " + (endTime - startTime) + " milliseconds");
 
     return [response.toString(), data.text];
 };
@@ -113,11 +127,9 @@ async function processFile(fileUrl, metadata) {
  * @returns a promise that resolves to an array of files enriched with summary and raw text
  */
 async function processFilesBatch(filesBatch, course) {
-    //  console.log('FBH', filesBatch.length);
     // Filter out non-PDF files
     const pdfFiles = filesBatch.filter(file => file['content-type'] === "application/pdf");
 
-    // console.log('PDF', pdfFiles.length);
     // Use Promise.all to process all the PDF files in parallel
     const processedFilesPromises = pdfFiles.map(async file => {
         file.course_code = course.course_code;
@@ -127,7 +139,7 @@ async function processFilesBatch(filesBatch, course) {
         try {
             const [summary, rawText] = await processFile(file.url, { fileName: file.display_name, created_at: file.created_at });
             if (summary.length > 0 && rawText.length > 0) {
-                console.log(file.filename + " summary and raw text ✅");
+                // console.log(file.filename + " summary and raw text ✅");
                 file.summary = summary;
                 file.rawText = rawText;
             } else {
@@ -163,7 +175,6 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
             const jsonStr = await res.text();
             const modifiedStr = jsonStr.replace(/"id":(\d+)/g, '"id":"$1"');
             let announcements = JSON.parse(modifiedStr);
-            console.log(classJson[i], announcements.length);
             for (announcement of announcements) {
                 let preview_url = `https://uiowa.instructure.com/courses/${classJson[i].id.slice(-6)}/discussion_topics/${announcement.id}`
                 const file = {
@@ -200,14 +211,13 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
                 await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
 
                 const currEmbedding = await fetchEmbedding(JSON.stringify(file));
-                console.log('announcement embedding', currEmbedding.data[0].embedding);
                 records.push({ id: fileID, values: currEmbedding.data[0].embedding });
             }
+            console.log(`Found ${announcements.length}`);
         }
     }
 
     allAnnouncementsFile.rawText = JSON.stringify(recentAnnouncementFiles);
-    // console.log(allAnnouncementsFile);
     const uploadedAllAnnouncementsFile = await File.create(allAnnouncementsFile);
     const allAnnouncementsFileID = uploadedAllAnnouncementsFile._id.toString();
     await User.findByIdAndUpdate(userID, { $push: { files: allAnnouncementsFileID } });
@@ -215,12 +225,12 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
     const currEmbedding = await fetchEmbedding(JSON.stringify(allAnnouncementsFile));
     records.push({ id: allAnnouncementsFileID, values: currEmbedding.data[0].embedding });
 
+    console.log(`Writing ${records.length} records to vector store..`)
     await index.upsert(records);
 }
 
 async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index) {
     // Pull users assignments
-    // console.log(classJson)
     let records = [];
     let assignmentsArray = [];
     for(i in classJson){
@@ -254,10 +264,9 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
                 await User.findByIdAndUpdate(userID, { $push: { files: fileID } });
 
                 const currEmbedding = await fetchEmbedding(JSON.stringify(file));
-                console.log('assignment embedding', currEmbedding.data[0].embedding);
                 records.push({ id: fileID, values: currEmbedding.data[0].embedding });
-
             }
+            console.log(`Found ${assignments.length}`);
         }
     }
 
@@ -275,9 +284,11 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
             dueDate: file.due_at
         }
     });
-    const dueDateFileRawText = filteredFilesArray2.map(assignment => 
-        `${assignment.course_code} - ${assignment.assignmentName} - due on ${assignment.dueDate}`
-    ).join('\n');
+    const dueDateFileRawText = filteredFilesArray2.map(assignment => {
+        // Change UTC time to CST time
+        const centralTime = moment(assignment.dueDate).tz("America/Chicago").format('YYYY-MM-DDTHH:mm:ss');
+        return `${assignment.course_code} - ${assignment.assignmentName} - due on ${centralTime}`
+    }).join('\n');
     
     let urls = []
     for (let i = 0; i < filteredFilesArray2.length; i++){
@@ -300,6 +311,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     const currEmbedding = await fetchEmbedding(JSON.stringify(dueDateFile));
     records.push({ id: fileID, values: currEmbedding.data[0].embedding });
 
+    console.log(`Writing ${records.length} records to vector store..`)
     await index.upsert(records);
 }
 
@@ -308,8 +320,6 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
  * Owner: Ilya 
  */
 async function postCanvasData(userID, canvasToken) {
-
-
     let startTime = Date.now();
 
     await User.findByIdAndUpdate(userID, { $set: { files: [] } }, { new: true });
@@ -365,12 +375,11 @@ async function postCanvasData(userID, canvasToken) {
                     return;
                 }
 
-                console.log("Pulling content for " + classItem.course_code);
-                // console.log("filesRes", JSON.stringify(filesRes, null, 2));
+                console.log("Pulling file content for " + classItem.course_code);
 
                 // Process and enrich the files
                 const processedFiles = await processFilesBatch(filesRes, classItem);
-                // console.log('enrichedFiles', processedFiles);
+                console.log(`Processed ${processedFiles.length} files in ${classItem.course_code}`)
 
                 // Push file metadata to DB
                 for (let j = 0; j < processedFiles.length; j++) {
@@ -384,11 +393,8 @@ async function postCanvasData(userID, canvasToken) {
                         await User.findByIdAndUpdate(userID, { $push: { files: fileid } });
 
                         const currEmbedding = await fetchEmbedding(JSON.stringify(currFile));
-                        console.log('course file embedding', currEmbedding.data[0].embedding);
                         records.push({ id: fileid, values: currEmbedding.data[0].embedding });
                     }
-                    // console.log('uploaded file', uploadedFile);
-                    // console.log('with this id', uploadedFile._id);
                 }
             }
         } catch (e) { console.log("error processing class", e); }
@@ -400,7 +406,7 @@ async function postCanvasData(userID, canvasToken) {
     await index.upsert(records);
 
     let endTime = Date.now();
-    console.log("Total time: " + (endTime - startTime) + " milliseconds");
+    console.log("Total setup time: " + (endTime - startTime) + " milliseconds");
     return;
 }
 
@@ -427,7 +433,6 @@ async function fetchEmbedding(input) {
         }
 
         const jsonData = await response.json();
-        console.log(jsonData);
         return jsonData;
     } catch (error) {
         console.error('Error:', error);
@@ -482,35 +487,22 @@ Routes.post('/accountCreation', async (req, res) => {
 
 
 Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
+    let startTime2 = Date.now();
     const { prompt } = req.body;
-    console.log('Formulating response...');
-    // console.log(canvasToken);
-    // console.log(prompt);
+    console.log("we are hitting ") // Legacy code, do not remove or everything breaks.
+    console.log("Prompt: " + prompt)
 
+
+    let startTime3 = Date.now();
     // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
     const kMostRelevant = await getTopKRelevant(prompt, res.userProfile, process.env.KFILES); // Json array of file metadata
-    // for (file in kMostRelevant){
-    //     const fileName = `${Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)}.txt`;
-    //     if (file.rawText){
-    //         const fileText = file.rawText;
-    //         if (!fs.existsSync(`./data/${canvasToken}`)){
-    //             fs.mkdirSync(`./data/${canvasToken}`);
-    //         }
-    //         fs.writeFileSync(`./data/${canvasToken}/${fileName}`, fileText);
-    //     }
-    // }
+    let endTime3 = Date.now();
+    console.log("Top K files time: " + (endTime3 - startTime3) + " milliseconds");
 
-    // let documents = []
-    // for (file in kMostRelevant){
-    //     let fileMetaData = file;
-    //     delete fileMetaData.rawText;
-    //     documents.append(new Document({text:file.rawText, metadata: fileMetaData}))
-    // }
-    // console.log(documents);
-
+    // Get the documents
+    let startTime4 = Date.now();
     let documents = [];
     let allSources = [];
-    console.log("kMostRelevantFiles", kMostRelevant);
     let numberOfURLs = 0;
     for (let i = 0; i < kMostRelevant.length; i++) {
         try {
@@ -518,21 +510,19 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
             const file = await File.findById(id);
             const rawText = file.rawText;
             const title = file.display_name;
+            console.log(`Source ${numberOfURLs + 1}: ${title}`);
             const summary = file.summary;
             const type = file.type;
             let URL = file.preview_url;
-            console.log(type);
             if (type === "personal"){
                 let buffer = URL;
                 const base64Data = buffer.toString('base64');
                 URL = `data:application/pdf;base64,${base64Data}`;
-                console.log("REACHED URL", URL);
             }
             if(Array.isArray(URL)){
                 // console.log("PREVIEWS", URL);
                 for (let u of URL){
                     let s = {}
-                    console.log(u)
                     numberOfURLs++;
                     s.number = numberOfURLs;
                     s.title = u[1];
@@ -555,6 +545,8 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
             documents.push(new Document({ text: combinedText }));    
         } catch (e) { console.log(e); }
     }
+    let endTime4 = Date.now();
+    console.log("Fetching documents time: " + (endTime4 - startTime4) + " milliseconds");
 
     fsNormal.writeFileSync("./dumps/allSources.json", JSON.stringify(allSources))
 
@@ -563,13 +555,16 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
         llm: new OpenAI({ model: "gpt-4", temperature: 0 }),
     });
 
-    // console.log(documents);
+    // Indexing
     const index = await SummaryIndex.fromDocuments(documents, { serviceContext });
 
+    let startTime = Date.now();
     const queryEngine = index.asQueryEngine();
     const response = await queryEngine.query(
-        prompt,
+        prompt
     );
+    let endTime = Date.now();
+    console.log("Query time: " + (endTime - startTime) + " milliseconds");
 
     const answer = response.toString();
 
@@ -579,6 +574,12 @@ Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     await foundUser.save();
 
     res.json({ finalAnswer: answer, sources: allSources });
+    let endTime2 = Date.now();
+    console.log("Total answer time: " + (endTime2 - startTime2) + " milliseconds");
+    console.log('-------------------');
+    console.log(`Answer: ${answer}`);
+    console.log(`Sources: \n${sources.join('\n')}`);
+    console.log('-------------------');
 }));
 
 getTopKRelevant = async (query, user, k) => {
@@ -588,13 +589,11 @@ getTopKRelevant = async (query, user, k) => {
     // console.log('canvasFiles', canvasFiles);
     const personalFiles = await dataProvider.getPersonalFiles();
     // const collegeFiles = await dataProvider.getCollegeFiles();
-    console.log('personalFiles', personalFiles);
     const allFiles = canvasFiles.concat(personalFiles);
     // const allFiles = canvasFiles.concat(personalFiles).concat({type:"collegefile", fileContent:collegeFiles});
-    console.log(allFiles.length);
+    console.log(`User has ${allFiles.length} total files`);
     const proompter = new Proompter();
     const topKIds = await proompter.pickTopKFiles(allFiles, query, k, user._id.toString());
-    console.log(topKIds);
     return topKIds;
 }
 
