@@ -6,7 +6,7 @@ import { Tab } from '@headlessui/react'
 import clsx from 'clsx'
 
 import { Container } from '@/components/Container'
-import backgroundImage from '@/images/background-features.jpg'
+import backgroundImage from '@/images/background-features.png'
 import screenshotExpenses from '@/images/screenshots/expenses.png'
 import screenshotPayroll from '@/images/screenshots/payroll.png'
 import screenshotReporting from '@/images/screenshots/reporting.png'
@@ -14,28 +14,28 @@ import screenshotVatReturns from '@/images/screenshots/vat-returns.png'
 
 const features = [
   {
-    title: 'Payroll',
+    title: 'Sources',
     description:
-      "Keep track of everyone's salaries and whether or not they've been paid. Direct deposit not supported.",
+      "Every response from Courser references where the answer came from in your professor's notes.",
     image: screenshotPayroll,
   },
   {
-    title: 'Claim expenses',
+    title: 'Have a sick day?',
     description:
-      "All of your receipts organized into one place, as long as you don't mind typing in the data by hand.",
+      "Courser has read today's notes and knows what you're missing. It'll catch you up on what you missed.",
     image: screenshotExpenses,
   },
   {
-    title: 'VAT handling',
+    title: 'When are office hours?',
     description:
-      "We only sell our software to companies who don't deal with VAT at all, so technically we do all the VAT stuff they need.",
+      "Courser knows assignment deadlines, office hours, and upcoming exams. No more searching through Canvas.",
     image: screenshotVatReturns,
   },
   {
-    title: 'Reporting',
+    title: 'Class scheduler (Coming Soon)',
     description:
-      'Easily export your data into an Excel spreadsheet where you can do whatever the hell you want with it.',
-    image: screenshotReporting,
+      "The degree audit is confusing. That is why Courser can help you find classes with the right prerequisites, helping you graduate one time.",
+    image: screenshotVatReturns,
   },
 ]
 
@@ -74,11 +74,10 @@ export function PrimaryFeatures() {
       <Container className="relative">
         <div className="max-w-2xl md:mx-auto md:text-center xl:max-w-none">
           <h2 className="font-display text-3xl tracking-tight text-white sm:text-4xl md:text-5xl">
-            Everything you need to run your books.
+            Have 300 PowerPoint slides to review?
           </h2>
           <p className="mt-6 text-lg tracking-tight text-iowaYellow-100">
-            Well everything you need if you aren’t that picky about minor
-            details like tax compliance.
+            Let Courser save you hours. It's like having a TA at your side to answer all your questions.
           </p>
         </div>
         <Tab.Group
