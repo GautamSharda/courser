@@ -58,9 +58,7 @@ Routes.get("/home", isLoggedIn, asyncMiddleware(async (req, res) => {
     const fileIds = res.userProfile.personalFiles;
     const files = [];
     for (const fileId of fileIds) {
-        //get only the field fileName from the file object
-        const fileName = await File.findById(fileId).select('fileName');
-        files.push({ name: fileName.fileName, id: fileId });
+        files.push({ name: fileId.name, id: fileId })
     }
     res.userProfile.personalFiles = files;
     // if (files.length === 0 && res.userProfile.canvasToken){
@@ -459,7 +457,7 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
             const dp = new DataProvider(res.userProfile._id.toString());
             const uploadedFile = await dp.uploadFileToMongo(myfile);
             mongoFiles.push({ name: uploadedFile.display_name, id: uploadedFile._id.toString() });
-            fileIds.push(uploadedFile._id.toString());
+            fileIds.push({name: uploadedFile.display_name, id: uploadedFile._id.toString()});
             //const writePdf = await dp.createPdfFromMongoId(uploadedFile._id.toString(), 'data');
         }
         const foundUser = await User.findById(res.userProfile._id);

@@ -21,6 +21,7 @@ export function Main() {
   const [messages, addMessage] = messagesHook();
   const [showYTModal, setShowYTModal] = useState(false);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
+  const [userFiles, setUserFiles] = useState([]);
 
   const myRef = useRef(null);
 
@@ -37,7 +38,14 @@ export function Main() {
     console.log('in auth');
     const res = await isLoggedIn(constants.clientUrl, '/home');
     setIsLoading(false);
-    if (res) setUser({ ...res.user });
+    if (res) {
+      setUser({ ...res.user })
+
+      // Use the callback provided to setUserFiles to ensure you have the updated state
+      setUserFiles(() => {
+        return res.user.personalFiles
+      })
+    }
   };
 
   useEffect(() => {
@@ -70,10 +78,8 @@ export function Main() {
       console.log('response');
       console.log(res);
       setUser({ ...user, canvasToken: res.user.canvasToken });
-    }else if (response.status==401){
-      alert('Invalid Canvas Token');
     }else{
-      alert('An error occured setting up your account');
+      alert('Invalid Canvas Token');
     }
     setIsLoading(false);
 
@@ -261,8 +267,16 @@ export function Main() {
 
 function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) {
   const [nextQuestion, setNextQuestion] = useState('');
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      sendNextQuestion(nextQuestion);
+      setNextQuestion('');
+    }
+  }
+
   return (
-    <div className="flex items-start space-x-4 w-full px-12 md:px-0 md:w-[600px] sticky bottom-0 right-0 bg-white pt-2">
+    <div className="sticky bottom-0 right-0 flex w-full items-start space-x-4 bg-white px-12 pt-2 md:w-[600px] md:px-0">
       <div className="min-w-0 flex-1">
         <div>
           <div className="border-b border-gray-200 focus-within:border-iowaYellow-600">
@@ -270,34 +284,58 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) 
               rows={1}
               value={nextQuestion}
               onChange={(e) => setNextQuestion(e.target.value)}
-              className="block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6 textInput"
+              className="textInput block w-full resize-none border-0 border-b border-transparent p-0 pb-2 text-gray-900 placeholder:text-gray-400 focus:border-iowaYellow-600 focus:ring-0 sm:text-sm sm:leading-6"
               placeholder={placeholder}
+              onKeyDown={handleKeyPress}
             ></textarea>
           </div>
-          <div className={`flex ${file ? 'justify-between align-center' : 'justify-end'} pt-2`}>
+          <div
+            className={`flex ${
+              file ? 'align-center justify-between' : 'justify-end'
+            } pt-2`}
+          >
             {file && (
               <div className="flex items-center space-x-5">
                 <div className="flow-root">
-                  <label htmlFor="fileInput" type="button" className="-m-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 hover:text-gray-500 cursor-pointer">
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                  <label
+                    htmlFor="fileInput"
+                    type="button"
+                    className="-m-2 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-gray-400 hover:text-gray-500"
+                  >
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"
+                      />
                     </svg>
-                    <input id="fileInput" type="file" className="sr-only" onChange={addFile} multiple />
+                    <input
+                      id="fileInput"
+                      type="file"
+                      className="sr-only"
+                      onChange={addFile}
+                      multiple
+                    />
                   </label>
                 </div>
 
                 <div className="flow-root">
-
                   <Dropdown files={file} />
                 </div>
-
               </div>
             )}
             <button
               className="inline-flex items-center rounded-md bg-iowaYellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-iowaYellow-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-iowaYellow-600"
               onClick={() => {
-                sendNextQuestion(nextQuestion);
-                setNextQuestion('');
+                sendNextQuestion(nextQuestion)
+                setNextQuestion('')
               }}
             >
               {btnText ? btnText : 'Submit'}
@@ -306,5 +344,5 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) 
         </div>
       </div>
     </div>
-  );
+  )
 }
