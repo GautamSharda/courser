@@ -13,7 +13,7 @@ function Home() {
 
   return (
     <div className="h-screen items-center justify-between flex flex-col">
-      <nav className="border-b border-gray-200 bg-white w-full">
+      <nav className="border-b border-gray-200 bg-white w-full z-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between">
             <div className="flex">

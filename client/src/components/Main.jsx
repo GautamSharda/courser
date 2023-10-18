@@ -8,6 +8,7 @@ import { AIResponse } from './AIResponse';
 import messagesHook from '@/helpers/useMessage';
 import Dropdown from './Dropdown';
 import ToolTip from './ToolTip';
+import UpdateToken from './UpdateToken';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
 import Cooking from './Cooking';
@@ -22,6 +23,7 @@ export function Main() {
   const [showYTModal, setShowYTModal] = useState(false);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const [userFiles, setUserFiles] = useState([]);
+  const [showUpdateToken, setShowUpdateToken] = useState(false)
 
   const myRef = useRef(null);
 
@@ -60,6 +62,10 @@ export function Main() {
       });
     }
   };
+
+    const toggleShowUpdateToken = () => {
+      setShowUpdateToken(!showUpdateToken)
+    }
 
   const setCanvasToken = async (token) => {
     setIsLoading(true);
@@ -169,7 +175,13 @@ export function Main() {
 
   if (version === 'chatWindow') {
     return (
-      <div className="h-full py-2 w-full">
+      <div className="h-full w-full py-2">
+        {showUpdateToken ? (
+          <UpdateToken
+            setCanvasToken={setCanvasToken}
+            toggleShowUpdateToken={toggleShowUpdateToken}
+          />
+        ) : null}
         <div className="mx-auto flex h-full max-w-7xl flex-col items-center justify-between">
           <div
             ref={myRef}
@@ -178,15 +190,14 @@ export function Main() {
             {messages.map((response, i) => {
               return <AIResponse response={response} key={i} />
             })}
-            {isLoadingResponse ? (
-              <Cooking/>
-            ) : null}
+            {isLoadingResponse ? <Cooking /> : null}
           </div>
           <CommentForm
             sendNextQuestion={sendNextQuestion}
             file={file}
             addFile={handleFileUpload}
             placeholder={`Follow up`}
+            toggleShowUpdateToken={toggleShowUpdateToken}
           />
         </div>
       </div>
@@ -195,21 +206,35 @@ export function Main() {
 
   if (version === 'firstQuestion') {
     return (
-      <div className="py-10 w-full h-full flex justify-center flex-col items-center gap-10">
+      <div className="flex h-full w-full flex-col items-center justify-center gap-10 py-10">
         <header>
+          {showUpdateToken ? (
+            <UpdateToken
+              setCanvasToken={setCanvasToken}
+              toggleShowUpdateToken={toggleShowUpdateToken}
+            />
+          ) : null}
           <div className="mx-auto max-w-7xl">
-            <h1 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight text-gray-900">What are you wondering?</h1>
+            <h1 className="text-2xl font-bold leading-tight tracking-tight text-gray-900 md:text-3xl">
+              What are you wondering?
+            </h1>
           </div>
         </header>
-        <main className='w-full'>
-          <div className="mx-auto max-w-7xl my-10">
-            <div className="min-w-full h-[70%] flex flex-col items-center justify-center">
-              <CommentForm sendNextQuestion={sendNextQuestion} file={file} addFile={handleFileUpload} placeholder={`e.g. "what should I study for my networks exam?"`} />
+        <main className="w-full">
+          <div className="mx-auto my-10 max-w-7xl">
+            <div className="flex h-[70%] min-w-full flex-col items-center justify-center">
+              <CommentForm
+                sendNextQuestion={sendNextQuestion}
+                file={file}
+                addFile={handleFileUpload}
+                placeholder={`e.g. "what should I study for my networks exam?"`}
+                toggleShowUpdateToken={toggleShowUpdateToken}
+              />
             </div>
           </div>
         </main>
       </div>
-    );
+    )
   }
   return (
     <div className="flex h-[80%] w-full flex-col items-center justify-center py-10">
@@ -265,7 +290,7 @@ export function Main() {
 }
 
 
-function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) {
+function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText, toggleShowUpdateToken }) {
   const [nextQuestion, setNextQuestion] = useState('');
 
   const handleKeyPress = (e) => {
@@ -329,6 +354,16 @@ function CommentForm({ sendNextQuestion, placeholder, file, addFile, btnText }) 
                 <div className="flow-root">
                   <Dropdown files={file} />
                 </div>
+
+                {toggleShowUpdateToken ? (
+                  <div className="">
+                    <button
+                      onClick={toggleShowUpdateToken}
+                      className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                      Update Token
+                    </button>
+                  </div>
+                ) : null}
               </div>
             )}
             <button
