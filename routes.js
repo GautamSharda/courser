@@ -26,6 +26,12 @@ const moment = require('moment-timezone');
 
 // Important constants
 const currentTerm = "Fall23"; // This is the term that we're currently in
+currentTermCheck = async(course_code) => {
+    if(course_code.includes("F") && course_code.includes("23")){
+        return true;
+    }
+    return false;
+}
 
 
 Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
@@ -41,6 +47,7 @@ Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
         redirect: 'follow'
     };
 
+    // this is just to confirm the token works
     const classDataResponse = await fetch("https://canvas.instructure.com/api/v1/courses?per_page=1", requestOptions);
 
     if (classDataResponse.status==401){
@@ -232,7 +239,7 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     let records = [];
     let assignmentsArray = [];
     for(i in classJson){
-        if (classJson[i].course_code && classJson[i].course_code.includes(currentTerm)){
+        if (classJson[i].course_code && currentTermCheck(classJson[i].course_code)){
             console.log("Pulling assignments for " + classJson[i].course_code)
             const res = await fetch(`https://canvas.instructure.com/api/v1/courses/${classJson[i].id}/assignments`, requestOptions);
             const jsonStr = await res.text();
