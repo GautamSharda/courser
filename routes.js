@@ -231,7 +231,9 @@ async function pullAnnouncements(userID, canvasToken, classJson, myHeaders, requ
     records.push({ id: allAnnouncementsFileID, values: currEmbedding.data[0].embedding });
 
     console.log(`Writing ${records.length} records to vector store..`)
-    await index.upsert(records);
+    try{
+        await index.upsert(records);
+    }catch(e){console.log(e)};
 }
 
 async function pullAssignments(userID, canvasToken, classJson, myHeaders, requestOptions, index) {
@@ -316,8 +318,10 @@ async function pullAssignments(userID, canvasToken, classJson, myHeaders, reques
     const currEmbedding = await fetchEmbedding(JSON.stringify(dueDateFile));
     records.push({ id: fileID, values: currEmbedding.data[0].embedding });
 
-    console.log(`Writing ${records.length} records to vector store..`)
+    console.log(`Writing ${records.length} records to vector store..`);
+    try{
     await index.upsert(records);
+    }catch(e){console.log(e)};
 }
 
 /** 

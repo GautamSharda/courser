@@ -35,12 +35,12 @@ const FileSchema = new Schema({
 
     summary: {
       type: String,
-      required: true
+      required: false
     },
 
     rawText: {
       type: String,
-      required: true
+      required: false
     },
 
     owner: {
