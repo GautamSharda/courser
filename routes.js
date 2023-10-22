@@ -483,12 +483,114 @@ Routes.post('/accountCreation', async (req, res) => {
     res.status(200).send({ token: token, message: 'Login successful' });
 });
 
+Routes.post('/answerTest', async (req, res) => {
+    console.log("we are hitting TEST ") // Legacy code, do not remove or everything breaks.
+    let startTime2 = Date.now();
+    const prompt = req.body.body;
+    console.log("Prompt: " + prompt)
+
+    req.userProfile = JSON.parse(req.body.userProfile);
+    console.log(req.userProfile)
+
+
+    let startTime3 = Date.now();
+    // find K most relevant files from  user.personalData, user.canvasData, UIOWAData, combine corresponding vectors, query
+    const kMostRelevant = await getTopKRelevant(prompt, req.userProfile, process.env.KFILES); // Json array of file metadata
+    let endTime3 = Date.now();
+    console.log("Top K files time: " + (endTime3 - startTime3) + " milliseconds");
+
+    // Get the documents
+    let startTime4 = Date.now();
+    let documents = [];
+    let allSources = [];
+    let numberOfURLs = 0;
+    for (let i = 0; i < kMostRelevant.length; i++) {
+        try {
+            const id = new ObjectId(kMostRelevant[i]);
+            const file = await File.findById(id);
+            const rawText = file.rawText;
+            const title = file.display_name;
+            console.log(`Source ${numberOfURLs + 1}: ${title}`);
+            const summary = file.summary;
+            const type = file.type;
+            let URL = file.preview_url;
+            if (type === "personal"){
+                let buffer = URL;
+                const base64Data = buffer.toString('base64');
+                URL = `data:application/pdf;base64,${base64Data}`;
+            }
+            if(Array.isArray(URL)){
+                // console.log("PREVIEWS", URL);
+                for (let u of URL){
+                    let s = {}
+                    numberOfURLs++;
+                    s.number = numberOfURLs;
+                    s.title = u[1];
+                    s.url = u[0];
+                    s.type = type;
+                    allSources.push(s);
+                }
+            } else{
+                let s = {}
+                numberOfURLs++;
+                s.number = numberOfURLs;
+                s.title = title;
+                s.url = URL;
+                s.type = type;
+                allSources.push(s);
+            }
+            let combinedText = title + summary + rawText;
+            // console.log(combinedText);
+            // console.log(combinedText);
+            documents.push(new Document({ text: combinedText }));    
+        } catch (e) { console.log(e); }
+    }
+    let endTime4 = Date.now();
+    console.log("Fetching documents time: " + (endTime4 - startTime4) + " milliseconds");
+
+    fsNormal.writeFileSync("./dumps/allSources.json", JSON.stringify(allSources))
+
+    // Specify LLM model
+    const serviceContext = serviceContextFromDefaults({
+        llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
+    });
+
+    // Indexing
+    const index = await SummaryIndex.fromDocuments(documents, { serviceContext });
+
+    let startTime = Date.now();
+    const queryEngine = index.asQueryEngine();
+    const response = await queryEngine.query(
+        prompt
+    );
+    let endTime = Date.now();
+    console.log("Query time: " + (endTime - startTime) + " milliseconds");
+
+    const answer = response.toString();
+
+    const foundUser = await User.findById(req.userProfile._id.toString());
+    foundUser.questions.push(prompt);
+    foundUser.responses.push(answer);
+    await foundUser.save();
+
+    res.json({ finalAnswer: answer, sources: allSources });
+    let endTime2 = Date.now();
+    console.log("Total answer time: " + (endTime2 - startTime2) + " milliseconds");
+    console.log('-------------------');
+    console.log(`Answer: ${answer}`);
+    console.log(`Sources: \n${allSources.join('\n')}`);
+    console.log('-------------------');
+});
+
 
 Routes.post('/answer', isLoggedIn, asyncMiddleware(async (req, res) => {
     let startTime2 = Date.now();
     const { prompt } = req.body;
     console.log("we are hitting ") // Legacy code, do not remove or everything breaks.
     console.log("Prompt: " + prompt)
+
+    // Put res.userProfile in dumps for automated queries (needed for benchmarking)
+    // fsNormal.writeFileSync("./dumps/userProfile.json", JSON.stringify(res.userProfile))
 
 
     let startTime3 = Date.now();
