@@ -15,6 +15,7 @@ import Cooking from './Cooking';
 
 import constants from '@/helpers/constants';
 import { redirect } from 'next/dist/server/api-utils';
+import { Asap } from 'next/font/google';
 
 export function Main() {
   const [user, setUser] = useState({});
@@ -85,7 +86,11 @@ export function Main() {
       console.log(res);
       setUser({ ...user, canvasToken: res.user.canvasToken });
     }else{
-      alert('Invalid Canvas Token');
+      if (response.status==401){
+        alert('Invalid Canvas Token');
+      } else{
+        alert(`Sorry, we ran into an error setting up your account! We'll have it fixed ASAP.`)
+      }
     }
     setIsLoading(false);
 

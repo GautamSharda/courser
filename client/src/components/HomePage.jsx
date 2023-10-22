@@ -2,6 +2,7 @@
 import { Fragment, useState } from 'react'
 import { useRouter } from 'next/router';
 import { CallToAction } from '@/components/CallToAction'
+import { PrimaryFeatures } from '@/components/PrimaryFeatures';
 import { Faqs } from '@/components/Faqs'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
@@ -53,6 +54,8 @@ export default function HomePage() {
       <Header signUpButton={handleGoogle}/>
       <main>
         <Hero signUpButton={handleGoogle}/>
+        <PrimaryFeatures/>
+        <Footer/>
       </main>
     </>
   )
