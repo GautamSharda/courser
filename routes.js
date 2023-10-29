@@ -23,6 +23,7 @@ const fsNormal = require('fs');
 const { ObjectId } = require("mongodb");
 const { Pinecone } = require("@pinecone-database/pinecone");
 const moment = require('moment-timezone');
+const mongoose = require("mongoose");
 
 // Important constants
 const currentTerm = "Fall23"; // This is the term that we're currently in
@@ -32,6 +33,14 @@ currentTermCheck = async(course_code) => {
     }
     return false;
 }
+
+Routes.get('/getCourserData', asyncMiddleware(async (req, res) => {
+    const User = mongoose.model("User");
+
+    // return the count of all users
+    const userCount = await User.countDocuments({});
+    res.json({userCount: userCount});
+}));
 
 
 Routes.post('/addCanvasToken', isLoggedIn, asyncMiddleware(async (req, res) => {
