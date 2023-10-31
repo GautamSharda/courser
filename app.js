@@ -11,7 +11,6 @@ if (process.env.NODE_ENV !== "production") {
   const Routes = require("./routes");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
-  const dataProvider = require('./dataProvider');
   const { MongoClient, ServerApiVersion } = require('mongodb');
   
   mongoose.set('strictQuery', true);
@@ -36,12 +35,12 @@ if (process.env.NODE_ENV !== "production") {
     const clientPatrickDB = clientPatrick.db('test');
     global.coursesCollections = clientPatrickDB.collection('courses');
   }
-  initPatrick();
+  // initPatrick();
 
   app.use(fileUpload());
   app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
-  app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser-beta.vercel.app"]}));
+  app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser-beta.vercel.app", "https://chatcourser.com"]}));
   app.use("", Routes);
   
   const server = http.createServer(app);
