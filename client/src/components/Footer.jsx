@@ -10,7 +10,7 @@ export function Footer() {
       <Container>
         <div className="py-16 flex align-center justify-center">
           <Logo className="h-10 w-auto" />
-          <p className='mt-2 ml-3'>Study faster with Courser</p>
+          <p className='mt-2 ml-3'>Accelerate learning with Courser</p>
         </div>
       </Container>
     </footer>
