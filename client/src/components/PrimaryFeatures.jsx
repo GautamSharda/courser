@@ -16,26 +16,26 @@ const features = [
   {
     title: 'Sources',
     description:
-      "Every response from Courser references where the answer came from in your professor's notes.",
+      "Every response from Courser cites exactly where the answer came from in your lecture recordings.",
     image: screenshotPayroll,
   },
   {
-    title: 'Have a sick day?',
+    title: 'Lecture Slides & Notes (Coming Soon)',
     description:
-      "Courser has read today's notes and knows what you're missing. It'll catch you up on what you missed.",
+      "There's lot of course content to navigate beyond lecture recordings. Courser can find the most relevant material, helping your students spend less time searching and more time learning.",
+    image: screenshotVatReturns,
+  },
+  {
+    title: 'Trusted by professors',
+    description:
+      "\"I am SO *** ****** impressed with this. Even this simple beta has more functionality than I realized it would have. The very, very simple use case of a plain-text search box that locates and links to a specific section of a youtube video [from my class] is in my opinion a game changer right there.\" –Professor Andrew Ippolito, Bucks County Community College",
+    image: screenshotVatReturns,
+  },
+  {
+    title: 'Free',
+    description:
+      "Being students ourselves, we know Courser can make learning more effective and increase student engagement with course content. To this end, it is completely free.",
     image: screenshotExpenses,
-  },
-  {
-    title: 'When are office hours?',
-    description:
-      "Courser knows assignment deadlines, office hours, and upcoming exams. No more searching through Canvas.",
-    image: screenshotVatReturns,
-  },
-  {
-    title: 'Class scheduler (Coming Soon)',
-    description:
-      "The degree audit is confusing. That is why Courser can help you find classes with the right prerequisites, helping you graduate one time.",
-    image: screenshotVatReturns,
   },
 ]
 
@@ -74,10 +74,10 @@ export function PrimaryFeatures() {
       <Container className="relative">
         <div className="max-w-2xl md:mx-auto md:text-center xl:max-w-none">
           <h2 className="font-display text-3xl tracking-tight text-white sm:text-4xl md:text-5xl">
-            Have 300 PowerPoint slides to review?
+            Have lots of lecture recordings?
           </h2>
           <p className="mt-6 text-lg tracking-tight text-iowaYellow-100">
-            Let Courser save you hours. It's like having a TA at your side to answer all your questions.
+            Let Courser save your students hours every semester. It's like having a TA that searches through the lectures to answer student questions.
           </p>
         </div>
         <Tab.Group

@@ -68,7 +68,7 @@ export function Header({signUpButton}) {
             </div>
             <Button onClick={signUpButton} color="iowaYellow">
               <span>
-                Beta Test <span className="hidden lg:inline">Courser</span>
+                Try for <span className="hidden lg:inline">Free →</span>
               </span>
             </Button>
             <div className="-mr-1 md:hidden">
