@@ -3,7 +3,7 @@
 // pages/client-rendered-page.js
 
 import React from 'react';
-import { Main } from '@/components/Main'
+import { Main } from './Main'
 import Navbar from '@/components/Navbar'
 
 function Home() {
