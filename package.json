@@ -40,6 +40,8 @@
     "pdf-extract": "^1.0.11",
     "pdf-parse": "^1.1.1",
     "pdf-text-extract": "^1.5.0",
-    "pdfkit": "^0.13.0"
+    "pdfkit": "^0.13.0",
+    "youtube-captions-scraper": "^2.0.1",
+    "youtube-metadata-from-url": "^1.0.3"
   }
 }
