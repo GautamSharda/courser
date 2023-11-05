@@ -31,7 +31,7 @@ function MyChatbots() {
             </div>
             <div className="flex items-center justify-center">
               <Link
-                href="#"
+                href="/create-chatbot"
                 className="rounded-md bg-zinc-700 px-4 py-2 text-zinc-200 transition duration-200 hover:bg-zinc-600 hover:text-zinc-300"
               >
                 Add Chatbot
@@ -41,7 +41,7 @@ function MyChatbots() {
         ) : (
           <div className="flex items-center justify-center">
             <Link
-              href="#"
+              href="/create-chatbot"
               className="rounded-md bg-zinc-700 px-4 py-2 text-zinc-200 transition duration-200 hover:bg-zinc-600 hover:text-zinc-300"
             >
               Create new chatbot
