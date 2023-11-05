@@ -17,7 +17,7 @@ export function SlimLayout({ children }) {
             src={backgroundImage}
             alt=""
             unoptimized
-          />
+          />w
         </div>
       </div>
     </>

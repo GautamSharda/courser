@@ -3,17 +3,15 @@
 // pages/client-rendered-page.js
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import isLoggedIn from '@/helpers/isLoggedIn';
-import { Loader } from './Loader';
-import { AIResponse } from './AIResponse';
+import { Loader } from '@/components/Loader';
+import { AIResponse } from '@/components/AIResponse';
 import messagesHook from '@/helpers/useMessage';
-import Dropdown from './Dropdown';
-import ToolTip from './ToolTip';
+import Dropdown from '@/components/Dropdown';
+import ToolTip from '@/components/ToolTip';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
-import Cooking from './Cooking';
-
+import Cooking from '@/components/Cooking';
 import constants from '@/helpers/constants';
-import { redirect } from 'next/dist/server/api-utils';
 
 export function Main() {
   const [user, setUser] = useState({});

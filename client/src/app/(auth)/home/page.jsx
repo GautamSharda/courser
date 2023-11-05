@@ -6,11 +6,9 @@ import React from 'react';
 import logo from '@/images/logo192.png'
 import Image from 'next/image';
 import Link from 'next/link'
-import { Main } from '@/components/Main'
+import { Main } from './Main'
 
 function Home() {
-
-
   return (
     <div className="h-screen items-center justify-between flex flex-col">
       <nav className="border-b border-gray-200 bg-white w-full">

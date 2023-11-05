@@ -25,7 +25,7 @@ export function Hero({ signUpButton }) {
       Just upload your lecture recordings and get a chatbot that answers questions based on your content. Then add it as a widget to your course page.
       </p>
       <div className="mt-10 flex justify-center gap-x-6">
-        <Button onClick={signUpButton}>Get your Course Bot</Button>
+        <Button href={'register'}>Create a chatbot</Button>
       </div>
     </Container>
   )

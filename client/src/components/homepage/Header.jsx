@@ -64,11 +64,11 @@ export function Header({signUpButton}) {
           </div>
           <div className="flex items-center gap-x-5 md:gap-x-8">
             <div className="hidden md:block">
-              {/* <NavLink href="/login">Sign in</NavLink> */}
+              <NavLink href="/login">Log in</NavLink>
             </div>
-            <Button onClick={signUpButton} color="iowaYellow">
+            <Button href={'/register'} color="iowaYellow">
               <span>
-                Try for <span className="hidden lg:inline">Free →</span>
+                Sign{' '}<span className="hidden lg:inline">Up →</span>
               </span>
             </Button>
             <div className="-mr-1 md:hidden">
