@@ -1,0 +1,10 @@
+Courser Answers Benchmark
+------------------------------------
+Total Questions: 28
+Correct (Score>=3): 12
+Incorrect (Score<3): 16
+Percentage Correct: 0.42857142857142855
+Average Rating: 2.5357142857142856
+Std. Dev. of Scores: 1.8152061990235555
+------------------------------------n
+Evalutation LLM: gpt-3.5-turbo

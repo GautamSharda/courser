@@ -32,7 +32,7 @@ export function AIResponse({ response }) {
   const { subject, text, type, sources } = response;
   if (type == "AI") {
     return (
-      <div className="flex flex-col rounded-br-xl rounded-tr-xl w-full md:w-[600px] bg-[#f0f0f0] py-2 px-4 mb-4">
+      <div className="flex flex-col rounded-br-3xl rounded-tr-3xl w-full md:w-[600px] bg-[#f0f0f0] p-4 mb-4">
         {text.split('\n').map((item, i) => (
           <p key={i} className='text-md'>
             {item}

@@ -12,7 +12,10 @@ export default function Dropdown({ files }) {
       <div>
         <Menu.Button className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
           Your Files
-          <ChevronDownIcon className="-mr-1 h-5 w-5 text-gray-400 mt-1" aria-hidden="true" />
+          <ChevronDownIcon
+            className="-mr-1 mt-1 h-5 w-5 text-gray-400"
+            aria-hidden="true"
+          />
         </Menu.Button>
       </div>
 
@@ -25,7 +28,7 @@ export default function Dropdown({ files }) {
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 bottom-full z-10 mt-2 w-56 origin-bottom-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+        <Menu.Items className="absolute bottom-full right-0 z-10 mt-2 w-44 origin-bottom-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none md:w-56">
           <div className="py-1">
             <Menu.Item>
               {({ active }) => (
@@ -33,7 +36,7 @@ export default function Dropdown({ files }) {
                   href="#"
                   className={classNames(
                     active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                    'block px-4 py-2 text-sm'
+                    'block px-4 py-2 text-sm',
                   )}
                 >
                   Your files
@@ -41,7 +44,7 @@ export default function Dropdown({ files }) {
               )}
             </Menu.Item>
           </div>
-          <div className="py-1 max-h-40 overflow-y-scroll">
+          <div className="max-h-40 overflow-y-scroll py-1">
             {files.map((file, index) => (
               <Menu.Item key={index}>
                 {({ active }) => (
@@ -49,7 +52,7 @@ export default function Dropdown({ files }) {
                     href="#"
                     className={classNames(
                       active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
-                      'block px-4 py-2 text-sm'
+                      'block w-full text-ellipsis px-2 py-2 text-left text-sm',
                     )}
                   >
                     {file.name}

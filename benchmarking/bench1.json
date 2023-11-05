@@ -1,0 +1,170 @@
+[
+    {
+      "category": "Class Content & Notes",
+      "questions": [
+        {
+          "question": "Summarize the topics covered in week 9 in my Theory of computation class.",
+          "answer": "In week 9, the topics covered include: Parsing: Cocke-Kasami-Younger (CKY) algorithm Shift-Reduce parsing Parsing Context-Free Grammars (CFGs): Testing if a string x is in the language of a CFG G in Chomsky normal form Exponential algorithms for parsing CFGs Need for more efficient algorithms Cocke-Kasami-Younger (CKY) algorithm: A dynamic programming algorithm that works for any grammar and operates in cubic time Steps for initializing and running the CKY algorithm on a given string Shift-Reduce Parsing: Parsing with a deterministic pushdown automaton (PDA) Comparing PDAs constructed from CFGs Shift and reduce operations in shift-reduce parsing Precedences in Parsing: Handling ambiguous grammars with precedences Closure properties of Context-Free Languages (CFLs): Operations that result in context-free languages, such as union, concatenation, and Kleene star Construction of new grammars for these operations Not closed under intersection: Context-Free Languages are not closed under intersection, illustrated with an example"
+        },
+        {
+          "question": "Provide bullet points of the topics covered week 9 in my Theory of computation class.",
+          "answer": "Parsing\n - Cocke-Kasami-Younger (CKY) algorithm\n - Shift-Reduce parsing\n- Parsing Context-Free Grammars (CFGs)\n - Testing if a string x is in the language of a CFG G in Chomsky normal form\n - Exponential algorithms for parsing CFGs\n - Need for more efficient algorithms\n- Cocke-Kasami-Younger (CKY) algorithm details\n - Dynamic programming algorithm\n - Works for any grammar\n - Operates in cubic time\n - Steps for initializing and running the CKY algorithm\n- Shift-Reduce Parsing details\n - Parsing with a deterministic pushdown automaton (PDA)\n - Comparison with PDAs constructed from CFGs\n - Shift and reduce operations\n- Precedences in Parsing\n - Handling ambiguous grammars with precedences\n- Closure properties of Context-Free Languages (CFLs)\n - Union, concatenation, and Kleene star result in context-free languages\n - Construction of new grammars for these operations\n- Non-closure under intersection\n - Context-Free Languages are not closed under intersection, illustrated with an example"
+        }
+      ]
+    },
+    {
+      "category": "Grades",
+      "questions": [
+        {
+          "question": "What’s my grade for Theory of Computation?",
+          "answer": "92%"
+        },
+        {
+          "question": "Can you tell me the grades I have received for the assignments in my Theory of Computation class?",
+          "answer": "hw1: 133 / 150 \n hw2: 130 / 150"
+        },
+        {
+          "question": "How did I perform in my last test in the Theory of Computation class?",
+          "answer": "Test 1: 120 / 125"
+        },
+        {
+            "question":"Can you show me my overall GPA for this semester?",
+            "answer":"I can estimate it, but this wont be exact since I dont have access to credit hour data.\n Theory of computation: 92%\nRussia today: 97%\n Intro to mathematical statistics: 90.61%\nStatistical learning: 93.46%. \nYour estimated GPA is 3.85."
+        }
+      ]
+    },
+    {
+      "category": "Assignments & Due Dates",
+      "questions": [
+        {
+          "question": "What is due for Russia today this week?",
+          "answer": "You dont have anything due for Russia today!"
+        },
+        {
+          "question": "What homework do I have due this week?",
+          "answer": "CS:4330:0001 Fall23 - hw3 - due on 2023-10-20T23:59:59"
+        },
+        {
+          "question": "What are my upcoming assignments?",
+          "answer": "CS:4330:0001 Fall23 - hw3 - due on 2023-10-20T23:59:59\nSTAT:3100:0001 Fall23 - Homework 6 - due on 2023-10-23T23:59:59"
+        },
+        {
+          "question": "When is my next assignment due in CS:4330?",
+          "answer": "hw3 - due on 2023-10-20T23:59:59"
+        }
+      ]
+    },
+    {
+      "category": "Study Recommendations",
+      "questions": [
+        {
+          "question": "What should I study for my Theory of computation exam?",
+          "answer": "Context-free grammars\nPushdown automata\nRelating CFGs and PDAs\nParsing. Would you like more details on any one in particular?"
+        },
+        {
+          "question": "Can you give me a list of important topics for my Theory of computation exam?",
+          "answer": "Topics covered after test 1: \n\nContext-free grammars\nPushdown automata\nRelating CFGs and PDAs\nParsing"
+        }
+      ]
+    },
+    {
+      "category": "Class Enrollment",
+      "questions": [
+        {
+          "question": "What classes am I taking right now?",
+          "answer": "Theory of computation, Russia today, Intro to mathematical statistics, Statistical learning"
+        },
+        {
+          "question": "What classes do I have tomorrow?",
+          "answer": "On Fridays you have Mathematical Statistics at 9:30am and Statistical Learning at 11:30am"
+        },
+        {
+          "question": "Which classes do I have on Tuesdays?",
+          "answer": "On Tuesdays you have Russia Today at 12:30pm and Theory of Computation 5:00pm"
+        }
+      ]
+    },
+    {
+      "category": "Application of Concepts",
+      "questions": [
+        {
+          "question": "How does the process of converting a context-free grammar (CFG) to a push-down automaton (PDA) work in detail.",
+          "answer": "The process of converting a context-free grammar (CFG) to a push-down automaton (PDA) involves creating an automaton that can recognize the same language as the given grammar. The steps involved in the conversion are as follows: Ideas of Translation: Turn each production in the grammar into a piece of the automaton. Use the stack to remember what we need to recognize. Details of Translation: Start with an initial state in the PDA. For each production � → � 1 � 2 … � � X→S 1 ​ S 2 ​ …S k ​ in the grammar, create transitions in the PDA such that the automaton can recognize the sequence � 1 � 2 … � � S 1 ​ S 2 ​ …S k ​ . For a terminal � t, create transitions to recognize the terminal. Use of Stack: The stack alphabet Γ = � ∪ Σ ∪ { ⊥ } Γ=N∪Σ∪{⊥}, where � N is the set of nonterminals, Σ Σ is the set of terminals, and ⊥ ⊥ is a special bottom-of-stack symbol. The stack is used to keep track of the nonterminals and terminals that are yet to be recognized. In summary, the conversion from CFG to PDA involves creating transitions in the PDA for each production in the CFG, and using the stack to keep track of what needs to be recognized. This process ensures that the language recognized by the PDA is the same as the language generated by the CFG."
+        },
+        {
+          "question": "Can you explain how to calculate the expected value for a discrete random variable?",
+          "answer": "To calculate the expected value of a discrete random variable: List out each possible value that the random variable can take on. Let's call these values x1, x2, ..., xn. For each value xi, find the probability that the random variable takes on this value. Let's call these probabilities p1, p2, ..., pn. Make sure that the sum of all these probabilities equals 1. Multiply each value xi by its corresponding probability pi. So you would calculate x1p1, x2p2, ..., xn*pn. Add up all these products. The sum is the expected value of the random variable. Mathematically, this can be written as: Expected value = x1p1 + x2p2 + ... + xn*pn For example, if you have a random variable that can take on the values 1, 2, and 3 with probabilities 0.2, 0.5, and 0.3 respectively, the expected value would be: Expected value = 10.2 + 20.5 + 3*0.3 = 0.2 + 1 + 0.9 = 2.1"
+        }
+      ]
+    },
+    {
+        "category": "Interactive Learning & Quiz",
+        "questions": [
+            {
+                "question": "Can you create a quiz for me based on the last lecture of Theory of Computation?",
+                "answer": "As long as it has questions and answers from a subset of the following topics: 1. Converting CFGs to PDAs, 2. Chomsky normal form, 3. Deterministic PDAs, 5. Translation of Grammar to Automaton, 6. Translation Algorithm and Techniques, 7. Stack Alphabet and Production Recognition, 8. Chomsky Normal Form Definitions and Properties, 9. Conversion of CFG to Chomsky Normal Form, 10. Properties and Limitations of Deterministic PDAs, 11. Comparative Analysis of PDAs and DPDAs, 12. Example and Proof Demonstrations, 13. Application and Practice with Chomsky Normal Form and PDAs"
+            },
+            {
+                "question": "Give me a practice problem to solve from the week 8 lecture in CS4330.",
+                "answer": "As long its a practice problem (with answer) relating to: the following topics: 1. Converting CFGs to PDAs, 2. Chomsky normal form, 3. Deterministic PDAs, 5. Translation of Grammar to Automaton, 6. Translation Algorithm and Techniques, 7. Stack Alphabet and Production Recognition, 8. Chomsky Normal Form Definitions and Properties, 9. Conversion of CFG to Chomsky Normal Form, 10. Properties and Limitations of Deterministic PDAs, 11. Comparative Analysis of PDAs and DPDAs, 12. Example and Proof Demonstrations, 13. Application and Practice with Chomsky Normal Form and PDAs"
+            }
+        ]
+    },
+    {
+        "category": "Assignment & Homework Assistance",
+        "questions": [
+            {
+                "question": "Can you help me understand this question from my assignment: The following problems concern the PDA whose transition diagram is shown in Figure 1. You will need to refer to the definitions for PDAs that I gave in class the week of Oct. 3rd and 5th (not the definition in Kozen). 1. Write out a set-theoretic description of the PDA (again, as I gave in class, not from Kozen). [15 points]?",
+                "answer": "I dont know as I cant see the PDA. Can also explain the general process for solving the problem."
+            }
+        ]
+    },
+    {
+        "category": "Resource & Material Request",
+        "questions": [
+            {
+                "question": "Can you provide me with additional reading materials for this topic?",
+                "answer": "Whatever works"
+            },
+            {
+                "question": "Where can I find the lecture notes for this module?",
+                "answer": "Whatever works"
+            }
+        ]
+    },
+    {
+        "category": "Time Management & Scheduling",
+        "questions": [
+            {
+                "question": "Help me create a study schedule for my upcoming exams.",
+                "answer": "Whatever works"
+            },
+            {
+                "question": "Can you suggest a time management strategy for balancing work and study?",
+                "answer": "Whatever works"
+            },
+            {
+                "question": "What should be my priority tasks for this week?",
+                "answer": "Whatever works"
+            }
+        ]
+    },
+    {
+        "category": "Motivation & Encouragement",
+        "questions": [
+            {
+                "question": "Can you send me a motivational quote to start my study session?",
+                "answer": "A motivational quote."
+            },
+            {
+                "question": "How can I stay motivated during exam season?",
+                "answer": "Something that would help the student stay motivated."
+            },
+            {
+                "question": "Do you have any tips for staying focused during long study sessions?",
+                "answer": "Some tips on how to stay focused when studying."
+            }
+        ]
+    }
+  ]
+  
