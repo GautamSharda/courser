@@ -2,6 +2,7 @@ import React from 'react'
 import logo from '@/images/logo192.png'
 import Image from 'next/image'
 import Link from 'next/link'
+import constants from '@/helpers/constants'
 
 function Navbar() {
   return (
@@ -31,31 +32,20 @@ function Navbar() {
               >
                 Dashboard
               </a>
-              <a
-                href="https://www.patrickrfoster.com"
-                target="_blank"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              >
-                About Us
-              </a>
-              <a
-                href="https:liaozhu.dev"
-                target="_blank"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              >
-                Contact
-              </a>
-              <a
-                href="https://twitter.com/gautam_sharda_"
-                target="_blank"
-                className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              >
-                Our Socials
-              </a>
             </div>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center"></div>
-          <div className="-mr-2 flex items-center sm:hidden"></div>
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+          <button className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+          onClick={() => {
+            localStorage.removeItem(constants.authToken)
+            window.location.href = '/'
+          }}
+          >
+              <p>Logout</p>
+          </button>
+          </div>
+          <div className="-mr-2 flex items-center sm:hidden">
+          </div>
         </div>
       </div>
     </nav>

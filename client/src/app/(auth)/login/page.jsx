@@ -1,58 +1,97 @@
+'use client'
 import Link from 'next/link'
+import { Button } from '@/components/Button';
+import { useState, useEffect } from 'react';
+import { TextField } from '@/components/Fields';
+import { SlimLayout } from '@/components/SlimLayout';
+import { handleGoogle, successfulLogin } from '@/helpers/firebase';
+import isLoggedIn from '@/helpers/isLoggedIn';
+import constants from '@/helpers/constants'
 
-import { Button } from '@/components/Button'
-import { TextField } from '@/components/Fields'
-import { Logo } from '@/components/Logo'
-import { SlimLayout } from '@/components/SlimLayout'
+export default function Register() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
-export const metadata = {
-  title: 'Sign In',
-}
+  const auth = async () => {
+    const res = await isLoggedIn(false);
+    if (res) {
+      window.location.href = '/my-chatbots';
+    }
+  };
 
-export default function Login() {
+  useEffect(() => {
+    auth();
+  }, []);
+
+  const handleSubmit = async () => {
+    const res = await fetch(`${constants.url}/auth/login-email`, {
+      body: JSON.stringify({email, name, password}),
+      headers: {'Content-Type': 'application/json'},
+      method: 'POST',
+    })
+    if (res.status === 200) {
+      const data = await res.json()
+      successfulLogin(data.token)
+    } else {
+      //
+    }
+  }
+
+  const canSubmit = email.length > 0 && password.length > 0;
   return (
     <SlimLayout>
-      <div className="flex">
-        <Link href="/" aria-label="Home">
-          <Logo className="h-10 w-auto" />
-        </Link>
-      </div>
       <h2 className="mt-20 text-lg font-semibold text-gray-900">
-        Sign in to your account
+        Courser Login
       </h2>
       <p className="mt-2 text-sm text-gray-700">
-        Don’t have an account?{' '}
+       Need an account?{' '}
         <Link
           href="/register"
           className="font-medium text-iowaYellow-600 hover:underline"
         >
-          Sign up
+         Sign Up
         </Link>{' '}
-        for a free trial.
+        with a new account.
       </p>
-      <form action="#" className="mt-10 grid grid-cols-1 gap-y-8">
+      <div
+        className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
+      >
         <TextField
+          className="col-span-full"
           label="Email address"
           name="email"
           type="email"
+          placeholder="johndoe@uiowa.edu"
           autoComplete="email"
-          required
+          onChange={(e) => setEmail(e.target.value)}
+          value={email}
+          require
         />
         <TextField
+          className="col-span-full"
           label="Password"
           name="password"
           type="password"
-          autoComplete="current-password"
+          placeholder="********"
+          autoComplete="new-password"
+          onChange={(e) => setPassword(e.target.value)}
+          value={password}
           required
         />
-        <div>
-          <Button type="submit" variant="solid" color="iowaYellow" className="w-full">
+        <div className="col-span-full">
+          <Button disabled={!canSubmit} type="submit" variant="solid" color="iowaYellow" className="w-full" onClick={handleSubmit}>
             <span>
-              Sign in <span aria-hidden="true">&rarr;</span>
+              Log in <span aria-hidden="true">&rarr;</span>
             </span>
           </Button>
         </div>
-      </form>
+        <div className="col-span-full">        
+          <button className="login-with-google-btn" onClick={handleGoogle}>
+            Google Log In 
+          </button>
+        </div>
+
+      </div>
     </SlimLayout>
   )
 }

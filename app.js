@@ -9,6 +9,7 @@ if (process.env.NODE_ENV !== "production") {
   const bodyParser = require("body-parser");
   const mongoose = require("mongoose");
   const Routes = require("./routes");
+  const Auth = require("./endpoints/auth");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
   const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -42,6 +43,7 @@ if (process.env.NODE_ENV !== "production") {
   app.use(cookieParser());
   app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser-beta.vercel.app", "https://chatcourser.com"]}));
   app.use("", Routes);
+  app.use("/auth", Auth);
   
   const server = http.createServer(app);
   

@@ -11,8 +11,7 @@ const { Configuration, OpenAIApi } = require("openai");
 const Proompter = require("./core_backend/proompter");
 const path = require('path');
 const File = require("./models/files");
-const { isLoggedIn, asyncMiddleware, randomStringToHash24Bits } = require("./middleware");
-const jwt = require("jsonwebtoken");
+const { isLoggedIn, asyncMiddleware } = require("./middleware");
 const DataProvider = require("./core_backend/dataProvider");
 const Headers = require("node-fetch").Headers;
 const fetch = require("node-fetch");
@@ -490,18 +489,6 @@ Routes.post('/upload', isLoggedIn, asyncMiddleware(async (req, res) => {
     }
 }));
 
-
-Routes.post('/accountCreation', async (req, res) => {
-    const { idToken, email, name } = req.body;
-    const uid = randomStringToHash24Bits(idToken);
-    const foundUser = await User.findById(uid);
-    if (!foundUser) {
-        const newUser = new User({ _id: uid, email: email, name: name })
-        await newUser.save();
-    }
-    const token = jwt.sign({ _id: uid, }, process.env.JWT_PRIVATE_KEY, { expiresIn: "1000d" });
-    res.status(200).send({ token: token, message: 'Login successful' });
-});
 
 Routes.post('/answerTest', async (req, res) => {
     console.log("we are hitting TEST ") // Legacy code, do not remove or everything breaks.

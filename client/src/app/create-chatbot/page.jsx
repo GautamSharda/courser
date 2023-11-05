@@ -3,11 +3,18 @@
 import Navbar from '@/components/Navbar'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLink, faDeleteLeft, faTrash} from '@fortawesome/free-solid-svg-icons';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import constants from '@/helpers/constants';
+import isLoggedIn from '@/helpers/isLoggedIn';
+
 
 function CreateChatbot() {
   const [sources, setSources] = useState([{ id: 1, url: '' }]);
   const [selection, setSelection] = useState('youtube');
+
+  useEffect(() => {
+    isLoggedIn(constants.clientUrl);
+  }, []);
 
   const handleDeleteSource = (index) => {
     if (sources.length === 1) {

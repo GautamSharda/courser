@@ -1,6 +1,8 @@
 'use client'
 import Navbar from '@/components/Navbar'
-import { useState } from 'react'
+import { useState, useEffect } from 'react';
+import constants from '@/helpers/constants';
+import isLoggedIn from '@/helpers/isLoggedIn';
 import Link from 'next/link'
 
 function MyChatbots() {
@@ -10,6 +12,11 @@ function MyChatbots() {
   //   { id: 2, name: 'Chatbot 2' },
   //   { id: 3, name: 'Chatbot 3' },
   // ])
+
+  useEffect(() => {
+    isLoggedIn(constants.clientUrl);
+  }, []);
+
   const [chatbots, setChatbots] = useState([])
 
   return (
