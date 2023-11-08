@@ -15,6 +15,7 @@ class OpenAIAssistant {
         await this.createAssistant();
         return;
     }
+    
     async askQuestion(query, thread_id = undefined) {
         const course = await Course.findById(this.courseID);
         var threadID = thread_id;

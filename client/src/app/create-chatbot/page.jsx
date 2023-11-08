@@ -34,7 +34,7 @@ function CreateChatbot() {
     if (response.ok){
       const data = await response.json();
       console.log(data);
-      window.location.href = `${constants.clientUrl}/chatbot/${data.course._id.toString()}`;
+      window.location.href = `${constants.clientUrl}/my-chatbots/${data.course._id.toString()}`;
     } else {
       console.log('we had an error')
     }

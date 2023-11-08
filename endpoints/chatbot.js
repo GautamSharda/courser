@@ -9,11 +9,25 @@ const Course = require("../models/course");
 const YouTubePipeline = require("../classes/YoutubePipeline");
 const OpenAIAssistant = require("../classes/OpenAIAssistant");
 
+Chatbot.get('/getAllCourses', isLoggedIn, asyncMiddleware(async (req, res) => {
+    const user = res.userProfile;
+    const courses = await Course.find({ _id: { $in: user.courses } });
+    res.json({ courses });
+}));
+
+//create a route that takes in a course id and returns the course
+Chatbot.get('/getCourse', asyncMiddleware(async (req, res) => {
+    const { courseID } = req.query;
+    const course = await Course.findById(courseID);
+    res.json({ course });
+}));
 
 //create a get route that has query params for the course id and thread_id (optional) and then in the body of the request, the query
-Chatbot.get('/ask', isLoggedIn, asyncMiddleware(async (req, res) => {
-    const { query, thread_id } = req.query;
-    const { courseID } = req.body;
+Chatbot.post('/ask', asyncMiddleware(async (req, res) => {
+    const { courseID, thread_id, query } = req.body;
+    console.log(req.body);
+    res.json({ answer: "hello", thread_id: 'thread-id123' });
+    return 
     const assistant = new OpenAIAssistant(courseID);
     const response = await assistant.askQuestion(query, thread_id);
     res.json({ response });

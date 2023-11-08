@@ -14,15 +14,15 @@ const isLoggedIn = async (redirect, url) => {
         //@ts-ignore
         headers: { "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken) }
     });
+    if (!res.ok) {
+        window.localStorage.removeItem(constants.authToken);
+        if (redirect) {
+            window.location.href = redirect;
+        }
+        return false;
+    }
     const data = await res.json();
-    if (res.ok) {
-        return data;
-    }
-    window.localStorage.removeItem(constants.authToken);
-    if (redirect) {
-        window.location.href = redirect;
-    }
-    return false;
+    return data;
 }
 
 

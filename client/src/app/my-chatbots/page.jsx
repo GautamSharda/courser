@@ -7,17 +7,23 @@ import Link from 'next/link'
 
 function MyChatbots() {
   // This is just for my testing purposes - Liao
-  // const [chatbots, setChatbots] = useState([
-  //   { id: 1, name: 'Chatbot 1' },
-  //   { id: 2, name: 'Chatbot 2' },
-  //   { id: 3, name: 'Chatbot 3' },
-  // ])
+  const [chatbots, setChatbots] = useState([]);
+
+  const getData = async () => {
+    const { courses } = await isLoggedIn(constants.clientUrl, 'chatbot/getAllCourses');
+    //replaces _id with id
+    courses.forEach((course) => {
+      course.id = course._id;
+      delete course._id;
+    });
+    setChatbots(courses);
+  }
 
   useEffect(() => {
-    isLoggedIn(constants.clientUrl);
+    getData();
   }, []);
 
-  const [chatbots, setChatbots] = useState([])
+  // const [chatbots, setChatbots] = useState([])
 
   return (
     <div className="h-screen w-full">
@@ -30,9 +36,12 @@ function MyChatbots() {
               {chatbots.map((chatbot) => (
                 <div
                   key={chatbot.id}
+                  onClick={() => {
+                    window.location.href = `${constants.clientUrl}/my-chatbots/${chatbot.id}`;
+                  }}
                   className="flex h-40 w-40 cursor-pointer items-center justify-center rounded-md border-2 border-zinc-300 bg-zinc-100 text-center text-zinc-600 transition duration-200 hover:bg-zinc-200 hover:text-zinc-700"
                 >
-                  {chatbot.name}
+                  {chatbot.id}
                 </div>
               ))}
             </div>

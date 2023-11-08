@@ -9,18 +9,24 @@ import constants from '@/helpers/constants';
 export default function Chatbot({id}) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [threadID, setThreadID] = useState("");
   const messagesEndRef = useRef(null);
 
   const handleSubmit = async (msg) => {
     const newUserMessage = { text: msg, isUser: true };
     setMessages((prevMessages) => [...prevMessages, newUserMessage]);
+    //    const { courseID, thread_id, query } = req.body;
     setLoading(true);
-    const response = await fetch(`${constants.url}/answer`, {
+    const response = await fetch(`${constants.url}/chatbot/ask`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt: msg }),
+      body: JSON.stringify({
+        courseID: id,
+        thread_id: threadID,
+        query: msg,
+      }),
     });
     const res = await response.json();
     handleResponse(res);
@@ -28,10 +34,28 @@ export default function Chatbot({id}) {
   };
 
   const handleResponse = (res) => {
-    console.log(res);
-    const newResponseMessage = { text: res.answer, isUser: false, sources: res.sources };
+    if (res.thread_id) {
+      setThreadID(res.thread_id);
+    }
+    const newResponseMessage = { text: res.answer, isUser: false, sources: [] };
     setMessages((prevMessages) => [...prevMessages, newResponseMessage]);
   };
+
+  const getChatbotSpecificData = async () => {
+    const newId = id || 'asdf';
+    const response = await fetch(`${constants.url}/chatbot/getCourse/${newId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const res = await response.json();
+    console.log(res);
+  }
+
+  useEffect(() => {
+    getChatbotSpecificData();
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
