@@ -24,17 +24,6 @@ function ChatInput({handleSubmit, color}) {
     e.target.style.height = `${e.target.scrollHeight}px`; 
   }
 
-  useEffect(() => {
-    if (color) {
-      let initBorderColor = 'border-'
-      let initTextColor = 'text-'
-      initBorderColor += color;
-      initTextColor += color;
-      setBorderColor(initBorderColor)
-      setTextColor(initTextColor)
-    } 
-  }, [])
-
   return (
     <div className="sticky bottom-0 right-0 z-10 flex w-full max-w-3xl flex-col items-center justify-center bg-white p-4">
       <form
@@ -44,8 +33,8 @@ function ChatInput({handleSubmit, color}) {
       >
         <div
           className={
-            `flex h-auto w-full items-center justify-center rounded-xl border-2 bg-white ${borderColor
-              ? borderColor
+            `flex h-auto w-full items-center justify-center rounded-xl border-2 bg-white ${color
+              ? `border-${color}`
               : 'border-bucksBlue' }`
           }
         >
@@ -70,7 +59,7 @@ function ChatInput({handleSubmit, color}) {
             fill="none"
             className={`${
               !message.trim() ? 'opacity-50' : 'cursor-pointer hover:opacity-80'
-            } mr-2 h-5 w-5 ${textColor ? textColor : 'text-bucksBlue'} transition duration-200`}
+            } mr-2 h-5 w-5 ${color ? `text-${color}` : 'text-bucksBlue'} transition duration-200`}
             onClick={handleChatSubmit}
           >
             <path
