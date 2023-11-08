@@ -13,6 +13,7 @@ function CreateChatbot() {
   const [sources, setSources] = useState([{ id: 1, url: '' }]);
   const [selection, setSelection] = useState('youtube');
   const [loading, setLoading] = useState(false);
+  const [chatBotName, setChatBotName] = useState('');
 
   useEffect(() => {
     isLoggedIn(constants.clientUrl);
@@ -110,10 +111,14 @@ function CreateChatbot() {
               <div className='ml-8 w-full lg:my-0 lg:w-2/6'>
                 <div className='flex justify-center items-center flex-col max-w-2xl lg:w-4/6 gap-5'>
                   <p className='text-zinc-600'>Sources: <span className="font-bold">{sources.filter((source) => source.url.trim() !== '').length}</span></p>
+                  <input placeholder='Chatbot Name' className='w-full p-2 rounded-sm border-2 border-zinc-500 focus:outline-none' type="text" 
+                    onChange={(e) => setChatBotName(e.target.value)}
+                    required
+                  />
                   <button
                     data-variant="flat"
                     disabled={sources.filter((source) => source.url.trim() !== '').length === 0}
-                    className={`bg-zinc-700 text-zinc-300 transition duration-200 rounded-sm p-2 px-4 ${sources.filter((source) => source.url.trim() !== '').length === 0 ? 'cursor-not-allowed opacity-50' : 'hover-bg-zinc-600 hover-text-zinc-100'}`}
+                    className={`w-full bg-zinc-700 text-zinc-300 transition duration-200 rounded-sm p-2 px-4 ${sources.filter((source) => source.url.trim() !== '').length === 0 ? 'cursor-not-allowed opacity-50' : 'hover-bg-zinc-600 hover-text-zinc-100'}`}
                     type="button"
                     onClick={create}
                   >

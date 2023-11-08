@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react";
 
 import constants from '@/helpers/constants';
 
-export default function Chatbot({id}) {
+export default function Chatbot({id, color, image}) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [threadID, setThreadID] = useState("");
@@ -62,21 +62,21 @@ export default function Chatbot({id}) {
   }, [messages]);
 
   return (
-    <main className="flex min-h-full flex-col items-center justify-center">
+    <main className="flex min-h-full flex-col items-center justify-center w-full">
       {/* <img
-        src="/static/images/bucks.png"
-        alt="bucks"
+        src={image ? image : '/static/images/bucks.png'}
+        alt="course-logo"
         className="w-1/2 md:w-1/4 fixed top-1/3 z-[-10] opacity-40"
       /> */}
       <div id='chatSection' className="max-w-3xl w-full flex-1 justify-start items-center flex flex-col overflow-y-scroll px-2 md:px-0 ">
         {messages.map((msg, i) => (
-          <ChatMessage key={i} message={msg.text} isUser={msg.isUser} sources={msg.sources}/>
+          <ChatMessage key={i} message={msg.text} isUser={msg.isUser} sources={msg.sources} color={color}/>
         ))}
         {loading ? <Loading/> : null}
         <div ref={messagesEndRef} />{" "}
         {/* This empty div acts as a reference to scroll to */}
       </div>
-      <ChatInput handleSubmit={handleSubmit} />
+      <ChatInput handleSubmit={handleSubmit} color={color} />
     </main>
   );
 }

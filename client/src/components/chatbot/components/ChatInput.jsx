@@ -1,10 +1,12 @@
 "use client";
-import {useState, useRef} from "react";
+import {useState, useRef, useEffect} from "react";
 
-function ChatInput({handleSubmit}) {
+function ChatInput({handleSubmit, color}) {
 
   const [message, setMessage] = useState("")
   const formRef = useRef(null); // Create a ref for the form element
+  const [borderColor, setBorderColor] = useState('')
+  const [textColor, setTextColor] = useState('')
 
   const handleChatSubmit = (e) => {
     if (!message.trim()) return; // Check if the trimmed message is empty (no non-whitespace characters)
@@ -22,26 +24,43 @@ function ChatInput({handleSubmit}) {
     e.target.style.height = `${e.target.scrollHeight}px`; 
   }
 
+  useEffect(() => {
+    if (color) {
+      let initBorderColor = 'border-'
+      let initTextColor = 'text-'
+      initBorderColor += color;
+      initTextColor += color;
+      setBorderColor(initBorderColor)
+      setTextColor(initTextColor)
+    } 
+  }, [])
+
   return (
-    <div className="bg-white w-full flex-col flex justify-center items-center sticky z-10 bottom-0 right-0 p-4 max-w-3xl">
+    <div className="sticky bottom-0 right-0 z-10 flex w-full max-w-3xl flex-col items-center justify-center bg-white p-4">
       <form
-        className="w-full shadow-2xl rounded-xl"
+        className="w-full rounded-xl shadow-2xl"
         onSubmit={handleChatSubmit}
         ref={formRef}
       >
-        <div className="w-full h-auto flex justify-center items-center border-bucksBlue border-2 bg-white rounded-xl">
+        <div
+          className={
+            `flex h-auto w-full items-center justify-center rounded-xl border-2 bg-white ${borderColor
+              ? borderColor
+              : 'border-bucksBlue' }`
+          }
+        >
           <textarea
             placeholder="What is significant about horseshoe crabs?"
-            className="max-h-[100px] min-h-full text-zinc-700 py-2 px-3 resize-none leading-tight mr-1 w-full rounded-l-xl focus:outline-none"
+            className="mr-1 max-h-[100px] min-h-full w-full resize-none rounded-l-xl border-none px-3 py-2 leading-tight text-zinc-700 text-md focus:outline-none"
             onChange={(e) => handleTextAreaChange(e)}
             autoFocus
             name="message"
             autoComplete="off"
             rows={1}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleChatSubmit(e);
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleChatSubmit(e)
               }
             }}
           />
@@ -50,8 +69,8 @@ function ChatInput({handleSubmit}) {
             viewBox="0 0 16 16"
             fill="none"
             className={`${
-              !message.trim() ? "opacity-50" : "hover:opacity-80 cursor-pointer"
-            } text-bucksBlue w-5 h-5 transition duration-200 mr-2`}
+              !message.trim() ? 'opacity-50' : 'cursor-pointer hover:opacity-80'
+            } mr-2 h-5 w-5 ${textColor ? textColor : 'text-bucksBlue'} transition duration-200`}
             onClick={handleChatSubmit}
           >
             <path
@@ -62,7 +81,7 @@ function ChatInput({handleSubmit}) {
         </div>
       </form>
     </div>
-  );
+  )
 }
 
 export default ChatInput;

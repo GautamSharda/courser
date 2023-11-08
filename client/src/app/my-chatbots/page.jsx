@@ -6,8 +6,7 @@ import isLoggedIn from '@/helpers/isLoggedIn';
 import Link from 'next/link'
 
 function MyChatbots() {
-  // This is just for my testing purposes - Liao
-  const [chatbots, setChatbots] = useState([]);
+  const [chatbots, setChatbots] = useState([]); // {id: #, name: '', image: '', color: ''}
 
   const getData = async () => {
     const { courses } = await isLoggedIn(constants.clientUrl, 'chatbot/getAllCourses');
@@ -37,11 +36,21 @@ function MyChatbots() {
                 <div
                   key={chatbot.id}
                   onClick={() => {
-                    window.location.href = `${constants.clientUrl}/my-chatbots/${chatbot.id}`;
+                    window.location.href = `${constants.clientUrl}/my-chatbots/${chatbot.id}`
                   }}
-                  className="flex h-40 w-40 cursor-pointer items-center justify-center rounded-md border-2 border-zinc-300 bg-zinc-100 text-center text-zinc-600 transition duration-200 hover:bg-zinc-200 hover:text-zinc-700"
+                  className={`relative flex h-40 w-40 cursor-pointer items-center justify-center rounded-md border-2 border-zinc-300 bg-zinc-100 text-center text-zinc-600 transition duration-200 hover:bg-zinc-200 hover:text-zinc-700`}
                 >
-                  {chatbot.id}
+                  {chatbot.image ? (
+                  <img
+                    src={chatbot.image}
+                    // src="https://picsum.photos/200/300"
+                    alt={chatbot.name}
+                    className="absolute left-0 top-0 z-[40] h-full w-full rounded-md object-cover"
+                  />
+                  ) : null}
+                  <p className="w-40 overflow-hidden text-ellipsis whitespace-nowrap z-50">
+                    {chatbot.name ? chatbot.name : chatbot.id}
+                  </p>
                 </div>
               ))}
             </div>
