@@ -25,12 +25,11 @@ Chatbot.get('/getCourse', asyncMiddleware(async (req, res) => {
 //create a get route that has query params for the course id and thread_id (optional) and then in the body of the request, the query
 Chatbot.post('/ask', asyncMiddleware(async (req, res) => {
     const { courseID, thread_id, query } = req.body;
-    console.log(req.body);
-    res.json({ answer: "hello", thread_id: 'thread-id123' });
-    return 
+    // res.json({ answer: "hello", thread_id: 'thread-id123' });
+    // return 
     const assistant = new OpenAIAssistant(courseID);
     const response = await assistant.askQuestion(query, thread_id);
-    res.json({ response });
+    res.json(response);
 }));
 
 Chatbot.post('/create', isLoggedIn, asyncMiddleware(async (req, res) => {
@@ -44,11 +43,12 @@ Chatbot.post('/create', isLoggedIn, asyncMiddleware(async (req, res) => {
     console.log(courseId);
     const youtubePipeline = new YouTubePipeline(courseId, youtubeUrls);
     const course = await youtubePipeline.getCaptions();
-    user.courses.push(courseId);
-    await user.save();
 
     const assistant = new OpenAIAssistant(courseId);
-    await assistant.run();
+    await assistant.newCourseConfig();
+
+    user.courses.push(courseId);
+    await user.save();
 
     res.json({ course });
 }));

@@ -38,9 +38,9 @@ class OpenAIAssistant {
   
         // If an assistant message is found, console.log() it
         if (lastMessageForRun) {
-            return `${lastMessageForRun.content[0].text.value} \n`;
+            return {thread_id: threadID, answer:lastMessageForRun.content[0].text.value };
         } else {
-            return "Oops, something went wrong."
+            return {thread_id: threadID, answer:"Oops, something went wrong." };
         }
     }
     async createAssistant() {
@@ -74,6 +74,8 @@ class OpenAIAssistant {
         try {
             fs.unlink(path);
         } catch (err) {
+            console.log(err);
+            console.log(path);
             console.log('failed to delete file');
         }
         
