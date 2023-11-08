@@ -2,7 +2,7 @@ if (process.env.NODE_ENV !== "production") {
     require("dotenv").config();
 }
 const express = require("express");
-const { isLoggedIn, asyncMiddleware } = require("../middleware");
+const { asyncMiddleware, isLoggedIn } = require("../middleware");
 const Auth = express.Router();
 const User = require("../models/user");
 const { randomStringToHash24Bits } = require("../middleware");
@@ -36,6 +36,8 @@ Auth.post('/google', asyncMiddleware(async (req, res) => {
     const token = jwt.sign({ _id: uid, }, process.env.JWT_PRIVATE_KEY, { expiresIn: "1000d" });
     res.status(200).send({ token: token, message: 'Login successful' });
 }));
+
+Auth.get("/isloggedin", isLoggedIn, asyncMiddleware(async (req, res) => {res.json({ user: res.userProfile });}));
 
 Auth.post('/signup-email', asyncMiddleware(async (req, res, next) => {
     const { email, password, name } = req.body;

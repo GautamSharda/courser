@@ -6,15 +6,39 @@ import { faLink, faDeleteLeft, faTrash} from '@fortawesome/free-solid-svg-icons'
 import { useState, useEffect } from 'react';
 import constants from '@/helpers/constants';
 import isLoggedIn from '@/helpers/isLoggedIn';
+import { Loader } from '@/components/Loader';
 
 
 function CreateChatbot() {
   const [sources, setSources] = useState([{ id: 1, url: '' }]);
   const [selection, setSelection] = useState('youtube');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     isLoggedIn(constants.clientUrl);
   }, []);
+
+  const create = async () => {
+    console.log('at create');
+    setLoading(true);
+    const youtubeUrls = sources.map((source) => source.url.trim());
+    const response = await fetch(`${constants.url}/chatbot/create`, {
+      method: 'POST',
+      headers: { 
+        "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ youtubeUrls }),
+    });    
+    setLoading(false);
+    if (response.ok){
+      const data = await response.json();
+      console.log(data);
+      window.location.href = `${constants.clientUrl}/chatbot/${data.course._id.toString()}`;
+    } else {
+      console.log('we had an error')
+    }
+  };
 
   const handleDeleteSource = (index) => {
     if (sources.length === 1) {
@@ -32,6 +56,7 @@ function CreateChatbot() {
   return (
     <div className="h-screen w-full">
       <Navbar />
+      {loading && <Loader text={"Creating you chatbot ..."}/>}
       <div className="my-10 flex h-full w-full flex-col items-center justify-start gap-10">
         <div className="flex flex-col items-center justify-center gap-2">
           <h1 className="text-3xl font-bold text-zinc-700">Create Chatbot</h1>
@@ -56,7 +81,7 @@ function CreateChatbot() {
                 <div className='flex flex-col gap-2 w-full'>
                   {sources.map((source, index) => (
                     <div className="relative mt-2 rounded-sm w-full" key={index}>
-                      <div class="flex space-x-2 w-full">
+                      <div className="flex space-x-2 w-full">
                         <input
                           type="text"
                           name="website"
@@ -90,6 +115,7 @@ function CreateChatbot() {
                     disabled={sources.filter((source) => source.url.trim() !== '').length === 0}
                     className={`bg-zinc-700 text-zinc-300 transition duration-200 rounded-sm p-2 px-4 ${sources.filter((source) => source.url.trim() !== '').length === 0 ? 'cursor-not-allowed opacity-50' : 'hover-bg-zinc-600 hover-text-zinc-100'}`}
                     type="button"
+                    onClick={create}
                   >
                     Create Chatbot
                   </button>

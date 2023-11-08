@@ -2,15 +2,13 @@ import constants from './constants';
 
 //set typescript return types to boolean for the function
 const isLoggedIn = async (redirect, url) => {
-    const endpoint = url ? `${constants.url}/${url}` : `${constants.url}/isloggedin`;
-    console.log(endpoint);
+    const endpoint = url ? `${constants.url}/${url}` : `${constants.url}/auth/isloggedin`;
     if (!window.localStorage.getItem(constants.authToken)){
         if (redirect) {
             window.location.href = redirect;
         }
         return false;
     }
-    console.log(window.localStorage.getItem(constants.authToken));
     //fetch the api to check if the user is logged in with the token
     const res = await fetch(`${endpoint}`, {
         //@ts-ignore

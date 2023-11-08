@@ -82,6 +82,7 @@
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(3px);
+  z-index: 1000;
 }
 
 .loader-content {
@@ -166,4 +167,8 @@
 .login-with-google-btn:hover {
   background-color:#e0e1f7;
   cursor: pointer;
+}
+
+#chatSection::-webkit-scrollbar {
+  width: 0px;
 }
