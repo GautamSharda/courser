@@ -71,13 +71,15 @@ class OpenAIAssistant {
         }
         course.openAIFiles = [openAIFile.id];
         await course.save();
-        try {
-            fs.unlink(path);
-        } catch (err) {
-            console.log(err);
-            console.log(path);
-            console.log('failed to delete file');
-        }
+        console.log(path);
+        // Deleting the local file
+        fs.unlink(path, (err) => {
+            if (err) {
+                console.error("Error deleting file:", err);
+            } else {
+                console.log("Local file deleted successfully");
+            }
+        });
         
         return course;
     }
