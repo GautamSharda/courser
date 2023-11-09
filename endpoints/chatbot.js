@@ -16,10 +16,10 @@ Chatbot.get('/getAllCourses', isLoggedIn, asyncMiddleware(async (req, res) => {
 }));
 
 //create a route that takes in a course id and returns the course
-Chatbot.get('/getCourse', asyncMiddleware(async (req, res) => {
-    const { courseID } = req.query;
+Chatbot.get('/getCourse/:courseID', asyncMiddleware(async (req, res) => {
+    const { courseID } = req.params;
     const course = await Course.findById(courseID);
-    res.json({ course });
+    res.json(course);
 }));
 
 //create a get route that has query params for the course id and thread_id (optional) and then in the body of the request, the query
