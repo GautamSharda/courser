@@ -64,7 +64,7 @@ export default function Chatbot({id, color, image}) {
         alt="course-logo"
         className="w-1/2 md:w-1/4 fixed top-1/3 z-[-10] opacity-40"
       /> */}
-      <div id='chatSection' className="max-w-3xl w-full flex-1 justify-start items-center flex flex-col overflow-y-scroll px-2 md:px-0 ">
+      <div id='chatSection' className="w-full flex-1 justify-start items-center flex flex-col overflow-y-scroll px-2 md:px-0 ">
         {messages.map((msg, i) => (
           <ChatMessage key={i} message={msg.text} isUser={msg.isUser} sources={msg.sources} color={color}/>
         ))}
