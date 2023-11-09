@@ -6,8 +6,7 @@ import isLoggedIn from '@/helpers/isLoggedIn';
 import Link from 'next/link'
 
 function MyChatbots() {
-  // This is just for my testing purposes - Liao
-  const [chatbots, setChatbots] = useState([]);
+  const [chatbots, setChatbots] = useState([]); // {id: #, name: '', image: '', color: ''}
 
   const getData = async () => {
     const { courses } = await isLoggedIn(constants.clientUrl, 'chatbot/getAllCourses');
@@ -36,11 +35,23 @@ function MyChatbots() {
               {chatbots.map((chatbot) => (
                 <Link
                   key={chatbot.id}
-                  href={`/chatbot/${chatbot.id}/chat`}
-                  className="flex h-40 w-40 cursor-pointer items-center justify-center rounded-md border-2 border-zinc-300 bg-zinc-100 text-center text-zinc-600 transition duration-200 hover:bg-zinc-200 hover:text-zinc-700"
+                  onClick={() => {
+                    window.location.href = `${constants.clientUrl}/my-chatbots/${chatbot.id}`
+                  }}
+                  className={`relative flex h-40 w-40 cursor-pointer items-center justify-center rounded-md border-2 border-zinc-300 bg-zinc-100 text-center text-zinc-600 transition duration-200 hover:bg-zinc-200 hover:text-zinc-700`}
                 >
-                  {chatbot.id}
-                </Link>
+                  {chatbot.image ? (
+                  <img
+                    src={chatbot.image}
+                    // src="https://picsum.photos/200/300"
+                    alt={chatbot.name}
+                    className="absolute left-0 top-0 z-[40] h-full w-full rounded-md object-cover"
+                  />
+                  ) : null}
+                  <p className="w-40 overflow-hidden text-ellipsis whitespace-nowrap z-50">
+                    {chatbot.name ? chatbot.name : chatbot.id}
+                  </p>
+                </div>
               ))}
             </div>
             <div className="flex items-center justify-center">
