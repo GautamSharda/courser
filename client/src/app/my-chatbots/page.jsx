@@ -33,11 +33,9 @@ function MyChatbots() {
           <>
             <div className="grid grid-cols-3 gap-4">
               {chatbots.map((chatbot) => (
-                <Link
+              <Link
                   key={chatbot.id}
-                  onClick={() => {
-                    window.location.href = `${constants.clientUrl}/my-chatbots/${chatbot.id}`
-                  }}
+                  href={`/chatbot/${chatbot.id}/chat`}
                   className={`relative flex h-40 w-40 cursor-pointer items-center justify-center rounded-md border-2 border-zinc-300 bg-zinc-100 text-center text-zinc-600 transition duration-200 hover:bg-zinc-200 hover:text-zinc-700`}
                 >
                   {chatbot.image ? (
@@ -51,7 +49,7 @@ function MyChatbots() {
                   <p className="w-40 overflow-hidden text-ellipsis whitespace-nowrap z-50">
                     {chatbot.name ? chatbot.name : chatbot.id}
                   </p>
-                </div>
+                  </Link>
               ))}
             </div>
             <div className="flex items-center justify-center">
