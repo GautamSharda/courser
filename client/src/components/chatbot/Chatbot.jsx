@@ -58,7 +58,7 @@ export default function Chatbot({id, color, image}) {
   }, [messages]);
 
   return (
-    <main className="flex min-h-full flex-col items-center justify-center w-full">
+    <main className="flex min-h-full flex-col items-center justify-center w-full bg-white p-4">
       {/* <img
         src={image ? image : '/static/images/bucks.png'}
         alt="course-logo"

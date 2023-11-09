@@ -40,7 +40,7 @@ function ChatInput({handleSubmit, color}) {
         >
           <textarea
             placeholder="What is significant about horseshoe crabs?"
-            className="mr-1 max-h-[100px] min-h-full w-full resize-none rounded-l-xl border-none px-3 py-2 leading-tight text-zinc-700 text-md focus:outline-none"
+            className="mr-1 max-h-[100px] min-h-full w-full resize-none rounded-l-xl border-none px-3 py-2 leading-tight text-zinc-700 text-md"
             onChange={(e) => handleTextAreaChange(e)}
             autoFocus
             name="message"
