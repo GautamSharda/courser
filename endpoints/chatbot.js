@@ -8,6 +8,7 @@ const User = require("../models/user");
 const Course = require("../models/course");
 const YouTubePipeline = require("../classes/YoutubePipeline");
 const OpenAIAssistant = require("../classes/OpenAIAssistant");
+const CourserAIAssistant = require("../classes/CourserAIAssistant");
 
 Chatbot.get('/getAllCourses', isLoggedIn, asyncMiddleware(async (req, res) => {
     const user = res.userProfile;
@@ -27,7 +28,7 @@ Chatbot.post('/ask', asyncMiddleware(async (req, res) => {
     const { courseID, thread_id, query } = req.body;
     // res.json({ answer: "hello", thread_id: 'thread-id123' });
     // return 
-    const assistant = new OpenAIAssistant(courseID);
+    const assistant = new CourserAIAssistant(courseID);
     const response = await assistant.askQuestion(query, thread_id);
     res.json(response);
 }));
@@ -44,7 +45,7 @@ Chatbot.post('/create', isLoggedIn, asyncMiddleware(async (req, res) => {
     const youtubePipeline = new YouTubePipeline(courseId, youtubeUrls);
     const course = await youtubePipeline.getCaptions();
 
-    const assistant = new OpenAIAssistant(courseId);
+    const assistant = new CourserAIAssistant(courseId);
     await assistant.newCourseConfig();
 
     user.courses.push(courseId);
