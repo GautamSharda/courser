@@ -41,7 +41,7 @@ export default function Chatbot({ id, color, image }) {
     if (res.thread_id) {
       setThreadID(res.thread_id)
     }
-    const newResponseMessage = { text: res.answer, isUser: false, sources: [] }
+    const newResponseMessage = { text: res.answer, isUser: false, sources: res.sources }
     setMessages((prevMessages) => [...prevMessages, newResponseMessage])
   }
 
@@ -81,6 +81,7 @@ export default function Chatbot({ id, color, image }) {
         className="flex w-full max-w-[800px] flex-1 flex-col items-center justify-start overflow-y-scroll px-2 md:px-0 z-50 "
       >
         {messages.map((msg, i) => (
+          console.log(msg),
           <ChatMessage
             key={i}
             message={msg.text}

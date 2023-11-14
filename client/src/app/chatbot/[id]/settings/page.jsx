@@ -12,7 +12,7 @@ export default function Settings ({ params }) {
     const [loading, setLoading] = useState('');
     const [name, setName] = useState('');
     const [placeholder, setPlaceholder] = useState('');
-    const [color, setColor] = useState('#FFE717')
+    const [color, setColor] = useState('#FFEC52')
     const [initialState, setInitialState] = useState({});//{name: '', placeholder: '', color: '', prompt: '', imgUrl: ''}
     const [prompt, setPrompt] = useState('');
     const [imageFile, setImageFile] = useState(null);
@@ -27,7 +27,7 @@ export default function Settings ({ params }) {
         const {color, backgroundImg, name, instructions, placeholder } = course;
         setName(name || '');
         setPlaceholder(placeholder || '');
-        setColor(color || '#FFE717')
+        setColor(color || '#FFEC52')
         setPrompt(instructions || '');
         setImgUrl(backgroundImg || constants.courserLogoLarge);
         setInitialState({name, placeholder, color, instructions, backgroundImg});
