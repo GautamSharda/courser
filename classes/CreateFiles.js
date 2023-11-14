@@ -13,6 +13,9 @@ class CreateFiles {
         //write json to file with random name in `files` dir and return path
         const fileName = Math.random().toString(36).substring(2, 22);
         const path = `files/${fileName}.json`;
+        const course = await Course.findById(this.courseID);
+        course.filepath = path;
+        await course.save();
 
         const jsonFile = new Promise((resolve, reject) => {
             fs.writeFile(path, json, (err) => {

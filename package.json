@@ -11,6 +11,7 @@
   "author": "Patrick Foster",
   "license": "ISC",
   "dependencies": {
+    "@pinecone-database/pinecone": "^1.1.2",
     "body-parser": "^1.20.0",
     "cloudinary": "^1.41.0",
     "cookie-parser": "^1.4.6",
@@ -23,6 +24,7 @@
     "firebase-admin": "^11.4.0",
     "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
+    "llamaindex": "^0.0.34",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
     "mongodb": "^6.1.0",
