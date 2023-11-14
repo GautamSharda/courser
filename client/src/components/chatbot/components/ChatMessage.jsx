@@ -7,11 +7,10 @@ function ChatMessage({ message, isUser, sources, color }) {
       }`}
     >
       <div
+        style={isUser ? { backgroundColor: color } : {}}
         className={`px-4 py-2 flex justify-between min-w-3/4 max-w-5/6 items-center shrink overflow-auto ${
-          isUser
-            ? color ? color : "bg-bucksBlue rounded-l-lg rounded-tr-lg"
-            : "bg-zinc-500 rounded-r-lg rounded-tl-lg"
-        }`}
+          !isUser ? "bg-zinc-500 rounded-r-lg rounded-tl-lg" : "rounded-l-lg rounded-tr-lg"}`
+        }
       >
         <p className="break-words text-white text-md w-full whitespace-no-wrap overflow-hidden">
           {message}

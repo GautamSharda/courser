@@ -30,7 +30,7 @@ function Navbar() {
                 className="inline-flex items-center border-b-2 border-iowaYellow-500 px-1 pt-1 text-sm font-medium text-gray-900"
                 aria-current="page"
               >
-                Dashboard
+                Courses
               </a>
             </div>
           </div>

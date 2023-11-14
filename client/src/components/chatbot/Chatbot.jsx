@@ -3,13 +3,16 @@ import ChatInput from "./components/ChatInput";
 import ChatMessage from "./components/ChatMessage";
 import Loading from "./components/Loading";
 import { useState, useRef, useEffect } from "react";
-
 import constants from '@/helpers/constants';
+
 
 export default function Chatbot({id, color, image}) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [threadID, setThreadID] = useState("");
+  const [currentColor, setCurrentColor] = useState(color);
+  const [currentPlaceHolder, setCurrentPlaceHolder] = useState("What is significant about horseshoe crabs?");
+  const [currentImage, setCurrentImage] = useState(image || constants.courserLogoLarge);
   const messagesEndRef = useRef(null);
 
   const handleSubmit = async (msg) => {
@@ -45,8 +48,13 @@ export default function Chatbot({id, color, image}) {
     const newId = id || 'asdf';
     const endpoint = `${constants.url}/course/getCourse/${newId}`;
     const response = await fetch(endpoint, {method: "GET", headers: { "Content-Type": "application/json"}});
+    if (response.status !== 200) {
+      return;
+    }
     const res = await response.json();
-    console.log(res);
+    setCurrentColor(res.color);
+    setCurrentPlaceHolder(res.placeholder);
+    setCurrentImage(res.backgroundImg);
   }
 
   useEffect(() => {
@@ -56,23 +64,23 @@ export default function Chatbot({id, color, image}) {
   useEffect(() => {
     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
+  console.log(messages);
   return (
     <main className="flex min-h-full flex-col items-center justify-center w-full bg-white p-4">
-      {/* <img
-        src={image ? image : '/static/images/bucks.png'}
+      <img
+        src={currentImage}
         alt="course-logo"
-        className="w-1/2 md:w-1/4 fixed top-1/3 z-[-10] opacity-40"
-      /> */}
-      <div id='chatSection' className="w-full flex-1 justify-start items-center flex flex-col overflow-y-scroll px-2 md:px-0 ">
+        className="w-1/2 max-w-[200px] md:w-1/4 fixed top-1/3 z-[0] opacity-40"
+      />
+      <div id='chatSection' className="w-full flex-1 max-w-[800px] justify-start items-center flex flex-col overflow-y-scroll px-2 md:px-0 ">
         {messages.map((msg, i) => (
-          <ChatMessage key={i} message={msg.text} isUser={msg.isUser} sources={msg.sources} color={color}/>
+          <ChatMessage key={i} message={msg.text} isUser={msg.isUser} sources={msg.sources} color={currentColor}/>
         ))}
         {loading ? <Loading/> : null}
         <div ref={messagesEndRef} />{" "}
         {/* This empty div acts as a reference to scroll to */}
       </div>
-      <ChatInput handleSubmit={handleSubmit} color={color} />
+      <ChatInput handleSubmit={handleSubmit} color={currentColor} placeholder={currentPlaceHolder}/>
     </main>
   );
 }

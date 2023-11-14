@@ -44,14 +44,11 @@ CourseRouter.post('/update',isLoggedIn, asyncMiddleware(async (req, res) => {
             });
         };
         const result = await upload(image);
-        console.log(result)
         if (result.secure_url) {
             data.backgroundImg = result.url;
         }
     }
     const updatedCourse = await Course.findOneAndUpdate({ _id: courseID }, { $set: { ...data } }, { new: true });
-    console.log(updatedCourse);
-    console.log(data);
     res.json(updatedCourse);
 }));
 

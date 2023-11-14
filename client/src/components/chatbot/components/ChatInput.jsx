@@ -1,12 +1,10 @@
 "use client";
 import {useState, useRef, useEffect} from "react";
 
-function ChatInput({handleSubmit, color}) {
+function ChatInput({handleSubmit, color, placeholder}) {
 
   const [message, setMessage] = useState("")
   const formRef = useRef(null); // Create a ref for the form element
-  const [borderColor, setBorderColor] = useState('')
-  const [textColor, setTextColor] = useState('')
 
   const handleChatSubmit = (e) => {
     if (!message.trim()) return; // Check if the trimmed message is empty (no non-whitespace characters)
@@ -22,7 +20,7 @@ function ChatInput({handleSubmit, color}) {
     setMessage(e.target.value);
     e.target.style.height = "inherit";
     e.target.style.height = `${e.target.scrollHeight}px`; 
-  }
+  };
 
   return (
     <div className="sticky bottom-0 right-0 z-10 flex w-full max-w-3xl flex-col items-center justify-center bg-white p-4">
@@ -32,14 +30,13 @@ function ChatInput({handleSubmit, color}) {
         ref={formRef}
       >
         <div
+          style={{ borderColor: color }}
           className={
-            `flex h-auto w-full items-center justify-center rounded-xl border-2 bg-white ${color
-              ? `border-${color}`
-              : 'border-bucksBlue' }`
+            `flex h-auto w-full items-center justify-center rounded-xl border-2 bg-white focus:outline-none`
           }
         >
           <textarea
-            placeholder="What is significant about horseshoe crabs?"
+            placeholder={placeholder ? placeholder : "What is significant about horseshoe crabs?"}
             className="mr-1 max-h-[100px] min-h-full w-full resize-none rounded-l-xl border-none px-3 py-2 leading-tight text-zinc-700 text-md"
             onChange={(e) => handleTextAreaChange(e)}
             autoFocus
@@ -57,9 +54,10 @@ function ChatInput({handleSubmit, color}) {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 16 16"
             fill="none"
+            style={{ color: color }}
             className={`${
               !message.trim() ? 'opacity-50' : 'cursor-pointer hover:opacity-80'
-            } mr-2 h-5 w-5 ${color ? `text-${color}` : 'text-bucksBlue'} transition duration-200`}
+            } mr-2 h-5 w-5 transition duration-200`}
             onClick={handleChatSubmit}
           >
             <path
