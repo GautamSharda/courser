@@ -12,7 +12,7 @@ export default function Chatbot({id, color, image}) {
   const [threadID, setThreadID] = useState("");
   const [currentColor, setCurrentColor] = useState(color);
   const [currentPlaceHolder, setCurrentPlaceHolder] = useState("What is significant about horseshoe crabs?");
-  const [currentImage, setCurrentImage] = useState(image || constants.courserLogoLarge);
+  const [currentImage, setCurrentImage] = useState(constants.courserLogoLarge);
   const messagesEndRef = useRef(null);
 
   const handleSubmit = async (msg) => {
@@ -54,7 +54,7 @@ export default function Chatbot({id, color, image}) {
     const res = await response.json();
     setCurrentColor(res.color);
     setCurrentPlaceHolder(res.placeholder);
-    setCurrentImage(res.backgroundImg);
+    setCurrentImage(res.backgroundImg || constants.courserLogoLarge);
   }
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function Chatbot({id, color, image}) {
   useEffect(() => {
     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-  console.log(messages);
+  
   return (
     <main className="flex min-h-full flex-col items-center justify-center w-full bg-white p-4">
       <img
