@@ -29,13 +29,13 @@ function CreateChatbot() {
         "x-access'courser-auth-token": window.localStorage.getItem(constants.authToken),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ youtubeUrls }),
+      body: JSON.stringify({ youtubeUrls, name: chatBotName }),
     });    
     setLoading(false);
     if (response.ok){
       const data = await response.json();
       console.log(data);
-      window.location.href = `${constants.clientUrl}/my-chatbots/${data.course._id.toString()}`;
+      window.location.href = `${constants.clientUrl}/chatbot/${data.course._id.toString()}/chat`;
     } else {
       console.log('we had an error')
     }
@@ -69,7 +69,7 @@ function CreateChatbot() {
             <input
               type="text"
               name="website"
-              className="w-full flex-auto rounded-sm border-0 px-3 py-1.5 text-zinc-600 ring-1 ring-inset ring-zinc-400 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-yellow-500 sm:text-sm sm:leading-6"
+              className="w-full flex-auto rounded-md border-0 px-3 py-1.5 text-zinc-600 ring-1 ring-inset ring-zinc-400 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-yellow-500 sm:text-sm sm:leading-6"
               placeholder="Chatbot Name"
               onChange={(e) => setChatBotName(e.target.value)}
             />
@@ -82,7 +82,7 @@ function CreateChatbot() {
             <input
               type="text"
               name="website"
-              className="w-full flex-auto rounded-sm border-0 px-3 py-1.5 text-zinc-600 ring-1 ring-inset ring-zinc-400 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-yellow-500 sm:text-sm sm:leading-6"
+              className="w-full flex-auto rounded-md border-0 px-3 py-1.5 text-zinc-600 ring-1 ring-inset ring-zinc-400 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-yellow-500 sm:text-sm sm:leading-6"
               placeholder="https://www.youtube.com/watch?v=a00AaaAAAAA&ab_channel=JohnDoe"
               onChange={(e) => setCurrentSource(e.target.value)}
               value={currentSource}
@@ -91,7 +91,7 @@ function CreateChatbot() {
               disabled={currentSource.trim() === ''}
               className={`${
                 currentSource.trim() === '' ? 'opacity-50' : ''
-              } 'hover-text-zinc-100 hover:bg-zinc-600' w-full rounded-sm bg-zinc-700 p-2 text-sm text-zinc-300 transition duration-200`}
+              } 'hover-text-zinc-100 hover:bg-zinc-600' w-full rounded-md bg-zinc-700 p-2 text-sm text-zinc-300 transition duration-200`}
               type="button"
               onClick={() => handleAddSource()}
             >
@@ -113,7 +113,7 @@ function CreateChatbot() {
               {sources.map((source, index) => (
                 <div
                   key={source.id}
-                  className="flex w-full items-center justify-start gap-2 p-2 ring-1 ring-inset ring-zinc-600 text-zinc-600 text-sm rounded-sm"
+                  className="flex w-full items-center justify-start gap-2 p-2 ring-1 ring-inset ring-zinc-600 text-zinc-600 text-sm rounded-md"
                 >
                   <p>{source.url}</p>
                   <FontAwesomeIcon
@@ -136,7 +136,7 @@ function CreateChatbot() {
                 sources.filter((source) => source.url.trim() !== '').length ===
                   0 || chatBotName.trim() === ''
               }
-              className={`w-full rounded-sm bg-zinc-700 p-2 px-4 text-zinc-300 transition duration-200 ${
+              className={`w-full rounded-md bg-zinc-700 p-2 px-4 text-zinc-300 transition duration-200 ${
                 sources.filter((source) => source.url.trim() !== '').length ===
                   0 || chatBotName.trim() === ''
                   ? 'cursor-not-allowed opacity-50'

@@ -43,7 +43,7 @@ export default function Chatbot({id, color, image}) {
 
   const getChatbotSpecificData = async () => {
     const newId = id || 'asdf';
-    const endpoint = `${constants.url}/chatbot/getCourse/${newId}`;
+    const endpoint = `${constants.url}/course/getCourse/${newId}`;
     const response = await fetch(endpoint, {method: "GET", headers: { "Content-Type": "application/json"}});
     const res = await response.json();
     console.log(res);

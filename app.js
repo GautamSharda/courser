@@ -10,6 +10,7 @@ if (process.env.NODE_ENV !== "production") {
   const mongoose = require("mongoose");
   const Auth = require("./endpoints/auth");
   const Chatbot = require("./endpoints/chatbot");
+  const CourseRouter = require("./endpoints/course");
   const cookieParser = require("cookie-parser");
   const fileUpload = require('express-fileupload');
   
@@ -34,6 +35,7 @@ if (process.env.NODE_ENV !== "production") {
   app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser-beta.vercel.app", "https://chatcourser.com"]}));
   app.use("/auth", Auth);
   app.use("/chatbot", Chatbot);
+  app.use("/course", CourseRouter);
   
   const server = http.createServer(app);
 

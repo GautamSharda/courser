@@ -9,7 +9,7 @@ function MyChatbots() {
   const [chatbots, setChatbots] = useState([]); // {id: #, name: '', image: '', color: ''}
 
   const getData = async () => {
-    const { courses } = await isLoggedIn(constants.clientUrl, 'chatbot/getAllCourses');
+    const { courses } = await isLoggedIn(constants.clientUrl, 'course/getAllCourses');
     //replaces _id with id
     courses.forEach((course) => {
       course.id = course._id;
@@ -48,7 +48,7 @@ function MyChatbots() {
                   ) : null}
                   <p className="w-40 overflow-hidden text-ellipsis whitespace-nowrap z-50">
                     {chatbot.name ? chatbot.name : chatbot.id}
-                  </p>
+                </p>
                   </Link>
               ))}
             </div>

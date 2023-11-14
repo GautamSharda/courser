@@ -172,3 +172,7 @@
 #chatSection::-webkit-scrollbar {
   width: 0px;
 }
+
+.config-container{
+  height: calc(100% - 64px);
+}
