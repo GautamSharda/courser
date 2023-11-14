@@ -31,13 +31,15 @@ function ChatInput({handleSubmit, color, placeholder}) {
       >
         <div
           style={{ borderColor: color }}
-          className={
-            `flex h-auto w-full items-center justify-center rounded-xl border-2 bg-white focus:outline-none`
-          }
+          className={`flex h-auto w-full items-center justify-center rounded-xl border-2 bg-white`}
         >
           <textarea
-            placeholder={placeholder ? placeholder : "What is significant about horseshoe crabs?"}
-            className="mr-1 max-h-[100px] min-h-full w-full resize-none rounded-l-xl border-none px-3 py-2 leading-tight text-zinc-700 text-md"
+            placeholder={
+              placeholder
+                ? placeholder
+                : 'What is significant about horseshoe crabs?'
+            }
+            className="text-md mr-1 max-h-[100px] min-h-full w-full resize-none rounded-l-xl border-none border-transparent px-3 py-2 leading-tight text-zinc-700 focus:border-transparent focus:ring-0"
             onChange={(e) => handleTextAreaChange(e)}
             autoFocus
             name="message"
