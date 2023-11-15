@@ -10,7 +10,7 @@ export default function HomePage() {
       <Header/>
       <main>
         <Hero/>
-        <PrimaryFeatures/>
+        {/* <PrimaryFeatures/> */}
         <Footer/>
       </main>
     </>

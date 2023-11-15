@@ -2,11 +2,13 @@
 import ChatInput from './components/ChatInput'
 import ChatMessage from './components/ChatMessage'
 import Loading from './components/Loading'
+import { Loader } from '@/components/Loader'
 import { useState, useRef, useEffect } from 'react'
 import constants from '@/helpers/constants'
 
 export default function Chatbot({ id, color, image }) {
   const [messages, setMessages] = useState([])
+  const [pageLoading, setPageLoading] = useState(true)
   const [loading, setLoading] = useState(false)
   const [threadID, setThreadID] = useState('')
   const [currentColor, setCurrentColor] = useState(color)
@@ -55,9 +57,10 @@ export default function Chatbot({ id, color, image }) {
     if (response.status !== 200) {
       return
     }
-    const res = await response.json()
-    setCurrentColor(res.color)
-    setCurrentPlaceHolder(res.placeholder)
+    const res = await response.json();
+    setPageLoading(false);
+    setCurrentColor(res.color);
+    setCurrentPlaceHolder(res.placeholder);
     setCurrentImage(res.backgroundImg || constants.courserLogoLarge)
   }
 
@@ -66,8 +69,21 @@ export default function Chatbot({ id, color, image }) {
   }, [])
 
   useEffect(() => {
-    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    if (messagesEndRef?.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+    
   }, [messages])
+
+  if (pageLoading) {
+    return (
+      <main className="flex min-h-full h-20 w-full flex-col items-center justify-center bg-white p-4">
+        <div className='w-[300px] h-[300px]'>
+          <Loader  className={'w-full h-full flex align-middle justify-center'} text={'Setting Up ...'}/>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex min-h-full h-20 w-full flex-col items-center justify-center bg-white p-4">

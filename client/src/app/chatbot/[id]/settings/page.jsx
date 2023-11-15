@@ -9,7 +9,7 @@ import { ChromePicker } from 'react-color';
 
 
 export default function Settings ({ params }) {
-    const [loading, setLoading] = useState('');
+    const [loading, setLoading] = useState('Loading ...');
     const [name, setName] = useState('');
     const [placeholder, setPlaceholder] = useState('');
     const [color, setColor] = useState('#FFEC52')
@@ -19,7 +19,6 @@ export default function Settings ({ params }) {
     const [imgUrl, setImgUrl] = useState(constants.courserLogoLarge);
 
     const courseID = params.id;
-
 
     const getData = async () => {
         const course = await isLoggedIn(constants.clientUrl, `course/getCourseProtected/${courseID}`);
@@ -65,14 +64,6 @@ export default function Settings ({ params }) {
         getData();
       }, []);
 
-    if (loading) {
-        return (
-        <div className="w-full h-full flex flex-col justify-center items-center">
-            <Loader text={loading} className={'-'}/>
-        </div>
-        )
-    }
-
     const hasDataChanged = () => {
         return name !== initialState.name || placeholder !== initialState.placeholder || color !== initialState.color || prompt !== initialState.instructions || (imgUrl !== initialState.backgroundImg && imgUrl !== constants.courserLogoLarge);
     }
@@ -92,6 +83,7 @@ export default function Settings ({ params }) {
     };
     return (
         <div className="w-full h-full flex flex-col justify-center items-center bg-red config-container">
+            {loading && <Loader text={loading}/>}
             <div className="h-full w-full max-w-[800px] flex flex-col justify-start items-center pt-8 pb-8">
                 <div className="h-16 w-full flex justify-start items-center">
                     <p className="text-2xl font-bold mr-4">Settings</p>

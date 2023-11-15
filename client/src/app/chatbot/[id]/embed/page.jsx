@@ -38,10 +38,10 @@ export default function Embed ({ params }) {
                 </div>
                 <div className="h-full w-full mt-4">
                     <p>Embed this url into your Canvas page through the redirect LTI extension</p>
-                    <div className="copy-text" ref={copyTextEl}>
+                    <div className="copy-text mt-4" ref={copyTextEl}>
                         <input type="copyTextInput" className="copyTextInput focus:border-transparent" value={`${constants.clientUrl}/my-chatbots/${courseID}`} ref={inputEl} readonly />
                         <button onClick={handleCopyClick}>
-                            <Image src={copy} alt="vlaid" id='copyImage' />
+                            <Image src={copy} alt="vlaid" className='copyImage' />
                         </button>
                     </div>
                 </div>

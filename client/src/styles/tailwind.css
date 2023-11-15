@@ -208,7 +208,7 @@
 }
 
 .copy-text button {
-  background: #5569d4;
+  background: #E5B200;
   color: #fff;
   font-size: 20px;
   border: none;
@@ -218,21 +218,21 @@
   display: flex;
   justify-content: center;
   align-content: center;
-  width: 20px;
+  width: 22px;
   height: 27px;
 }
 
 .copy-text button:active {
-  background: #5569d4;
+  background: #E5B200;
 }
 
 .copy-text button:before {
   content: "Copied";
   position: absolute;
-  top: -45px;
-  right: 0px;
-  background: #5569d4;
-  padding: 8px 10px;
+  top: -30px;
+  right: -40px;
+  background: #E5B200;
+  padding: 4px 10px;
   border-radius: 20px;
   font-size: 15px;
   display: none;
@@ -241,11 +241,11 @@
 .copy-text button:after {
   content: "";
   position: absolute;
-  top: -20px;
-  right: 25px;
+  top: -8px;
+  right: 14px;
   width: 10px;
   height: 10px;
-  background: #5569d4;
+  background: #E5B200;
   transform: rotate(45deg);
   display: none;
 }
@@ -253,4 +253,10 @@
 .copy-text.active button:before,
 .copy-text.active button:after {
   display: block;
+}
+
+.copyImage{
+  width: 16px;
+  margin-top: 3px;
+  margin-right: 1px;
 }
