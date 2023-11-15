@@ -123,7 +123,7 @@ export default function Settings ({ params }) {
                         onChange={(e) => setPlaceholder(e.target.value)}
                         />
                     </div>
-                    <div className="flex w-full flex-col items-start justify-start gap-2  mt-8">
+                    {/* <div className="flex w-full flex-col items-start justify-start gap-2  mt-8">
                         <label className="text-md w-full text-left font-bold text-zinc-600 md:text-lg">
                         Chatbot System Prompt
                         </label>
@@ -135,7 +135,7 @@ export default function Settings ({ params }) {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         />
-                    </div>
+                    </div> */}
                     <div className="flex w-full flex-row items-start justify-between gap-2 mt-8 px-10">
                         <div className="flex flex-col items-start justify-start">
                             <label className="text-md w-full text-left font-bold text-zinc-600 md:text-lg">

@@ -6,7 +6,7 @@ try {
 
 const constants = {
   url: isLocal ? "http://localhost:8000" : "https://courser-production.up.railway.app",
-  clientUrl: isLocal ? "http://localhost:3000" : "https://courser-beta.vercel.app",
+  clientUrl: isLocal ? "http://localhost:3000" : "https://chatcourser.com",
   courserLogoLarge: "https://res.cloudinary.com/dlk3ezbal/image/upload/v1699589098/jqmlca7vhr0cnzgdbaah.png",
   authToken: "my-courser-auth-token",
   firebaseConfig: {

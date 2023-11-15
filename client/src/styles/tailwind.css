@@ -176,3 +176,81 @@
 .config-container{
   height: calc(100% - 64px);
 }
+
+
+
+/*---------*/
+.copy-text {
+  position: relative;
+  padding: 0px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: 400px;
+  height: 40px;
+}
+
+
+.copy-text .copyTextInput {
+  padding: 0px;
+  font-size: 14px;
+  color: #555;
+  border: none;
+  outline: none;
+  height: 30px;
+  border-radius: 10px;
+  margin-left: 10px;
+  margin-right: 10px;
+  width: 350px;
+}
+
+.copy-text button {
+  background: #5569d4;
+  color: #fff;
+  font-size: 20px;
+  border: none;
+  outline: none;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  width: 20px;
+  height: 27px;
+}
+
+.copy-text button:active {
+  background: #5569d4;
+}
+
+.copy-text button:before {
+  content: "Copied";
+  position: absolute;
+  top: -45px;
+  right: 0px;
+  background: #5569d4;
+  padding: 8px 10px;
+  border-radius: 20px;
+  font-size: 15px;
+  display: none;
+}
+
+.copy-text button:after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  right: 25px;
+  width: 10px;
+  height: 10px;
+  background: #5569d4;
+  transform: rotate(45deg);
+  display: none;
+}
+
+.copy-text.active button:before,
+.copy-text.active button:after {
+  display: block;
+}
