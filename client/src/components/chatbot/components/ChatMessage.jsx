@@ -1,11 +1,5 @@
 'use client'
-import {useEffect} from "react";
-
 function ChatMessage({ message, isUser, sources, color }) {
-
-  useEffect(() => {
-    console.log("SLDJFLSKDJF", sources);
-  }, [sources])
 
   return (
     <div

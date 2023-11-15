@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import Link from 'next/link'
 import { Button } from '@/components/Button';
 import { useState, useEffect } from 'react';
@@ -6,12 +6,15 @@ import { TextField } from '@/components/Fields';
 import { SlimLayout } from '@/components/SlimLayout';
 import { handleGoogle, successfulLogin } from '@/helpers/firebase';
 import isLoggedIn from '@/helpers/isLoggedIn';
-import constants from '@/helpers/constants'
+import constants from '@/helpers/constants';
+import Error from '@/components/alerts/Error';
+
 
 export default function Register() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
-  const [password, setPassword] = useState('')
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('')
 
   const auth = async () => {
     const res = await isLoggedIn(false);
@@ -34,8 +37,10 @@ export default function Register() {
     if (res.status === 200) {
       const data = await res.json()
       successfulLogin(data.token)
+    } else if (res.status === 409) {
+      setError('Account with that email already exists')
     } else {
-      console.log('we have an error');
+      setError('Failed to create account')
     }
   }
 
@@ -45,7 +50,7 @@ export default function Register() {
       <h2 className="mt-20 text-lg font-semibold text-gray-900">
         Get started with Courser
       </h2>
-      <p className="mt-2 text-sm text-gray-700">
+      <p className="mt-2 text-sm text-gray-700 mb-5">
         Already registered?{' '}
         <Link
           href="/login"
@@ -55,8 +60,9 @@ export default function Register() {
         </Link>{' '}
         to your account.
       </p>
+      {error && <Error mainText={error}/>}
       <div
-        className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
+        className="mt-5 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
       >
           <TextField
           className="col-span-full"
@@ -99,7 +105,7 @@ export default function Register() {
           </Button>
         </div>
         <div className="col-span-full">        
-          <button className="login-with-google-btn" onClick={handleGoogle}>
+          <button className="login-with-google-btn" onClick={() => {handleGoogle(setError)}}>
             Google Sign Up 
           </button>
         </div>

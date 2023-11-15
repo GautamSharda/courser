@@ -30,6 +30,11 @@ Auth.post('/google', asyncMiddleware(async (req, res) => {
     const uid = randomStringToHash24Bits(idToken);
     const foundUser = await User.findById(uid);
     if (!foundUser) {
+        const sameEmail = await User.find({ email: email });
+        if (sameEmail.length > 0) {
+            res.status(409).send({ message: 'Email already in use' });
+            return;
+        }
         const newUser = new User({ _id: uid, email: email, name: name })
         await newUser.save();
     }
@@ -41,8 +46,14 @@ Auth.get("/isloggedin", isLoggedIn, asyncMiddleware(async (req, res) => {res.jso
 
 Auth.post('/signup-email', asyncMiddleware(async (req, res, next) => {
     const { email, password, name } = req.body;
-    console.log('here');
-    console.log(email);
+
+    //check if email is already in use
+    const sameEmail = await User.find({ email: email });
+    if (sameEmail.length > 0) {
+        res.status(409).send({ message: 'Email already in use' });
+        return;
+    }
+
     createUserWithEmailAndPassword(firebaseAuth, email, password)
         .then((fireBaseUser) => {
             const uid = randomStringToHash24Bits(fireBaseUser.user.uid);
@@ -51,14 +62,11 @@ Auth.post('/signup-email', asyncMiddleware(async (req, res, next) => {
                 const token = jwt.sign({ _id: uid, }, process.env.JWT_PRIVATE_KEY, { expiresIn: "1000d" });
                 res.status(200).send({ token: token, message: 'Login successful' });
             }).catch((error) => {
-                //TODO: delete the user from firebase
-                res.status(500).send({ message: error.message });
+                res.status(500).send({ message: 'Error creating account' });
             })
         })
         .catch(error => {
-            console.log(error);
-            const errorMessage = error.message;
-            res.status(500).send({ message: error.message });
+            res.status(500).send({ message: 'Error creating account' });
         });
 }));
 

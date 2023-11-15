@@ -26,7 +26,7 @@ if (process.env.NODE_ENV !== "production") {
       console.error("Error connecting to database");
   });
   db.once("open", () => {
-      console.log("✅ Database connected");
+      console.log("👉 👌 Database did the deed");
   });
 
   app.use(fileUpload());
@@ -37,14 +37,17 @@ if (process.env.NODE_ENV !== "production") {
   app.use("/chatbot", Chatbot);
   app.use("/course", CourseRouter);
   
-  const server = http.createServer(app);
+  app.use((err, req, res, next) => {
+    res.status(500).send('Something went wrong');
+});
 
-  let PORT = process.env.PORT;
-  if (PORT == null || PORT == "") {
-    PORT = 8000;
-  }
-  
-  server.listen(PORT, () => {
-    return console.log(`✅ We're live: ${PORT}`);
-  });
+let PORT = process.env.PORT;
+if (PORT == null || PORT == "") {
+  PORT = 8000;
+}
+
+app.listen(PORT, () => {
+  console.log(`🚀 Running this bitch on ${PORT}`)
+});
+
   

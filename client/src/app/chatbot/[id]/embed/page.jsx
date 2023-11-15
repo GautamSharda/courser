@@ -11,7 +11,6 @@ import Image from 'next/image'
 
 export default function Embed ({ params }) {
     const courseID = params.id;
-    console.log(courseID);
       useEffect(() => {
         isLoggedIn(constants.clientUrl);
       }, []);

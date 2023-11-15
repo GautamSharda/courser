@@ -22,7 +22,6 @@ export default function Settings ({ params }) {
 
     const getData = async () => {
         const course = await isLoggedIn(constants.clientUrl, `course/getCourseProtected/${courseID}`);
-        console.log(course);
         const {color, backgroundImg, name, instructions, placeholder } = course;
         setName(name || '');
         setPlaceholder(placeholder || '');
@@ -54,10 +53,7 @@ export default function Settings ({ params }) {
         setLoading('');
         if (response.ok) {
             const data = await response.json();
-            console.log(data);
-        } else {
-            console.log('we had an error');
-        }
+        } else {}
     }
     
       useEffect(() => {
@@ -71,7 +67,6 @@ export default function Settings ({ params }) {
     
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
-        console.log(file);
         if (file) {
             setImageFile(file);
             const reader = new FileReader();

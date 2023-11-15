@@ -31,7 +31,6 @@ CourseRouter.post('/update',isLoggedIn, asyncMiddleware(async (req, res) => {
     if (image !== undefined) {
         const upload = async (image) => {
           //const buffer = await fs.readFile(image.path);
-          console.log(image.data);
             const dataUri = `data:image/png;base64,${image.data.toString('base64')}`;
              return new Promise((resolve, reject) => {
                 cloudinary.uploader.upload(dataUri, (error, result) => {

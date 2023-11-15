@@ -7,10 +7,12 @@ import { SlimLayout } from '@/components/SlimLayout';
 import { handleGoogle, successfulLogin } from '@/helpers/firebase';
 import isLoggedIn from '@/helpers/isLoggedIn';
 import constants from '@/helpers/constants'
+import Error from '@/components/alerts/Error';
 
 export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
   const auth = async () => {
     const res = await isLoggedIn(false);
@@ -25,7 +27,7 @@ export default function Register() {
 
   const handleSubmit = async () => {
     const res = await fetch(`${constants.url}/auth/login-email`, {
-      body: JSON.stringify({email, name, password}),
+      body: JSON.stringify({email, password}),
       headers: {'Content-Type': 'application/json'},
       method: 'POST',
     })
@@ -33,17 +35,18 @@ export default function Register() {
       const data = await res.json()
       successfulLogin(data.token)
     } else {
-      //
+      setError('Invalid email or password')
     }
   }
 
   const canSubmit = email.length > 0 && password.length > 0;
   return (
     <SlimLayout>
+      <>
       <h2 className="mt-20 text-lg font-semibold text-gray-900">
         Courser Login
       </h2>
-      <p className="mt-2 text-sm text-gray-700">
+      <p className="mt-2 text-sm text-gray-700 mb-5">
        Need an account?{' '}
         <Link
           href="/register"
@@ -53,8 +56,9 @@ export default function Register() {
         </Link>{' '}
         with a new account.
       </p>
+      {error && <Error mainText={error}/>}
       <div
-        className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
+        className="mt-5 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2"
       >
         <TextField
           className="col-span-full"
@@ -86,12 +90,13 @@ export default function Register() {
           </Button>
         </div>
         <div className="col-span-full">        
-          <button className="login-with-google-btn" onClick={handleGoogle}>
+          <button className="login-with-google-btn" onClick={() => {handleGoogle(setError)}}>
             Google Log In 
           </button>
         </div>
 
       </div>
+      </>
     </SlimLayout>
   )
 }

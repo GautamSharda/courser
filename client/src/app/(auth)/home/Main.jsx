@@ -32,7 +32,6 @@ export function Main() {
   const file = (user && user.personalFiles) ? user.personalFiles : [];
 
   const auth = async () => {
-    console.log('in auth');
     const res = await isLoggedIn(constants.clientUrl, '/home');
     setIsLoading(false);
     if (res) setUser({ ...res.user });
@@ -65,8 +64,6 @@ export function Main() {
 
     if (response.ok) {
       const res = await response.json();
-      console.log('response');
-      console.log(res);
       setUser({ ...user, canvasToken: res.user.canvasToken });
     }else if (response.status==401){
       alert('Invalid Canvas Token');
@@ -157,7 +154,6 @@ export function Main() {
 
   if (isLoading) return <Loader />;
 
-  console.log("messages: ", messages);
 
   if (version === 'chatWindow') {
     return (

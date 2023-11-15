@@ -20,11 +20,8 @@ class CreateFiles {
         const jsonFile = new Promise((resolve, reject) => {
             fs.writeFile(path, json, (err) => {
                 if (err) {
-                    console.log('123')
-                    console.log(err);
                     reject(err);
                 } else {
-                    console.log('The file has been saved!');
                     resolve(path);
                 }
             });

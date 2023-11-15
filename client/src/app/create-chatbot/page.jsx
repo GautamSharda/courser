@@ -20,7 +20,6 @@ function CreateChatbot() {
   }, []);
 
   const create = async () => {
-    console.log('at create');
     setLoading(true);
     const youtubeUrls = sources.map((source) => source.url.trim());
     const response = await fetch(`${constants.url}/chatbot/create`, {
@@ -34,11 +33,8 @@ function CreateChatbot() {
     setLoading(false);
     if (response.ok){
       const data = await response.json();
-      console.log(data);
       window.location.href = `${constants.clientUrl}/chatbot/${data.course._id.toString()}/chat`;
-    } else {
-      console.log('we had an error')
-    }
+    } else {}
   };
 
   const handleDeleteSource = (index) => {

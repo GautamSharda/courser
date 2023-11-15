@@ -11,7 +11,6 @@ class YouTubePipeline {
 		this.courseID = courseID;
 		this.links = typeof links === 'string' ? [links] : links;
 		this.links = this.linkReducer([...this.links]);
-		console.log(this.links);
 	}
 
 	linkReducer(links) {
@@ -83,7 +82,6 @@ class YouTubePipeline {
 		const captions = await getSubtitles({videoID: videoID, lang: 'en'})
 		let newCaptions = [];
 		const link = `https://www.youtube.com/watch?v=${videoID}`
-		console.log(link);
 		let curObj = {
 			text: captions[0].text,
 			dur: Number(captions[0].dur),
