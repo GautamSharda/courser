@@ -1,10 +1,18 @@
 "use client";
 import {useState, useRef, useEffect} from "react";
 
-function ChatInput({handleSubmit, color, placeholder}) {
+function ChatInput({handleSubmit, color, placeholder, disabled}) {
 
   const [message, setMessage] = useState("")
   const formRef = useRef(null); // Create a ref for the form element
+
+    useEffect(() => {
+      // Focus on the textarea if disabled changes from true to false
+      if (!disabled) {
+        const textArea = formRef.current.querySelector('textarea')
+        textArea.focus()
+      }
+    }, [disabled])
 
   const handleChatSubmit = (e) => {
     if (!message.trim()) return; // Check if the trimmed message is empty (no non-whitespace characters)
@@ -23,7 +31,7 @@ function ChatInput({handleSubmit, color, placeholder}) {
   };
 
   return (
-    <div className="sticky bottom-0 right-0 z-10 flex w-full max-w-3xl flex-col items-center justify-center bg-white p-4">
+    <div className="sticky bottom-0 right-0 z-[51] flex w-full max-w-3xl flex-col items-center justify-center bg-white p-4">
       <form
         className="w-full rounded-xl shadow-2xl"
         onSubmit={handleChatSubmit}
@@ -51,6 +59,7 @@ function ChatInput({handleSubmit, color, placeholder}) {
                 handleChatSubmit(e)
               }
             }}
+            disabled={disabled}
           />
           <svg
             xmlns="http://www.w3.org/2000/svg"
