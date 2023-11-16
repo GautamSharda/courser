@@ -24,7 +24,7 @@ class CourserAIAssistant {
         const msgEmbedding = await this.getEmbedding(message);
         const index = PINECONE.index(INDEX);
         const namespace = index.namespace(this.courseID); 
-        const pineconeRes = await namespace.query({topK: 5, vector: msgEmbedding});
+        const pineconeRes = await namespace.query({topK: 3, vector: msgEmbedding});
         const matches = pineconeRes.matches;
         
         const course = await Course.findById(this.courseID);
@@ -40,7 +40,7 @@ class CourserAIAssistant {
 
         // Specify LLM model
         const serviceContext = serviceContextFromDefaults({
-            llm: new OpenAI({ model: "gpt-4-1106-preview", temperature: 0 }),
+            llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
         });
 
         // Indexing
