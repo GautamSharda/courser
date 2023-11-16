@@ -2,6 +2,7 @@ let isLocal = false;
 try {
   isLocal = window.location.href.includes('localhost');
 } catch (e) {}
+//test123
 // const TESTING = false;
 
 const constants = {
