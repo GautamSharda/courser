@@ -2,7 +2,7 @@ const Course = require('../models/course');
 const CreateFiles = require('./CreateFiles');
 const fs = require('fs');
 const { Pinecone, Index, PineconeRecord, QueryResponse, ScoredPineconeRecord } = require('@pinecone-database/pinecone');
-const { Document, SummaryIndex, ServiceContext, serviceContextFromDefaults, OpenAI, BaseQueryEngine } = require("llamaindex");
+const { Document, SummaryIndex, ServiceContext, serviceContextFromDefaults, OpenAI, BaseQueryEngine, ContextChatEngine } = require("llamaindex");
 
 const INDEX = "courser";
 const PINECONE = new Pinecone({
@@ -44,12 +44,13 @@ class CourserAIAssistant {
         });
 
         // Indexing
-        const llamaIndex = await SummaryIndex.fromDocuments(documents, { serviceContext });
+        const summaryIndex = await SummaryIndex.fromDocuments(documents, { serviceContext });
         // Make query
 
-        const queryEngine = llamaIndex.asQueryEngine();
-        const llamaResponse = await queryEngine.query(
-            message
+        const retriever = summaryIndex.asRetriever();
+        const chatEngine = new ContextChatEngine({ retriever });
+        const llamaResponse = await chatEngine.query(
+            query
         );
     
         const answer = llamaResponse.toString();
