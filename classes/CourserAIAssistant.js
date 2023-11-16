@@ -65,10 +65,15 @@ class CourserAIAssistant {
         const sources = []
         for (let i = 0; i < relevantChunks.length; i++) {
             const chunk = relevantChunks[i];
+            const timestamp = chunk.link.split("&t=")[1].split("s")[0];
+            const minutes = Math.floor(timestamp / 60);
+            const seconds = timestamp % 60;
             sources.push({
                 url: chunk.link,
                 title: chunk.title,
                 type: "YouTube",
+                seconds: seconds,
+                minutes: minutes,
                 number: i
             })
         }
