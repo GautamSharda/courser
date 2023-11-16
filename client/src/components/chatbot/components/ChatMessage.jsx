@@ -1,6 +1,6 @@
 'use client'
 function ChatMessage({ message, isUser, sources, color }) {
-
+    
   return (
     <div
       className={`my-1 w-full flex items-center ${
@@ -25,6 +25,7 @@ function ChatMessage({ message, isUser, sources, color }) {
                   href={source.url}
                 >
                   {source.title}
+                  {" ("+source.url.substring(source.url.indexOf("&") + 3)+")"}
                 </a>
               ))}
             </div>
