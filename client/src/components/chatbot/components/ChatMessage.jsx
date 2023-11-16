@@ -1,6 +1,6 @@
 'use client'
 function ChatMessage({ message, isUser, sources, color }) {
-
+    
   return (
     <div
       className={`my-1 flex w-full items-center ${
@@ -26,7 +26,7 @@ function ChatMessage({ message, isUser, sources, color }) {
                   target="_blank"
                   href={source.url}
                 >
-                  {`(${source.minutes < 10 ? '0'+source.minutes : source.minutes}:${source.seconds < 10 ? '0'+source.seconds : source.seconds}) ${source.title}`}
+                  {source.title}
                 </a>
               ))}
             </div>
