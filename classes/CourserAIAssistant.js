@@ -20,7 +20,7 @@ class CourserAIAssistant {
         return;
     }
 
-    async askQuestion(message, thread) {
+    async askQuestion(message, thread_id) {
         const msgEmbedding = await this.getEmbedding(message);
         const index = PINECONE.index(INDEX);
         const namespace = index.namespace(this.courseID); 
@@ -46,15 +46,14 @@ class CourserAIAssistant {
         // Indexing
         const summaryIndex = await SummaryIndex.fromDocuments(documents, { serviceContext });
         // Make query
-
         const retriever = summaryIndex.asRetriever();
         const chatEngine = new ContextChatEngine({ retriever });
-        const llamaResponse = await chatEngine.query(
-            query
+        const llamaResponse = await chatEngine.chat(
+            message,
+            thread_id ? thread_id : [],
         );
-    
         const answer = llamaResponse.toString();
-        console.log(answer);
+        // console.log(answer);
 
         //For later, switch out query engine with chat engine and your our own retriever, not theirs:
         // const retriever = llamaIndex.asRetriever();
@@ -82,7 +81,7 @@ class CourserAIAssistant {
         const response = answer + "\n" + JSON.stringify(sources);
         console.log(`q: ${message}`, "\n", `a: ${response}`);
 
-        return { answer: answer, sources: sources };
+        return { answer: answer, sources: sources, thread_id: chatEngine.chatHistory};
     }
 
     async createFiles() {
