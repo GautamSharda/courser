@@ -30,9 +30,12 @@ Chatbot.post('/create', isLoggedIn, asyncMiddleware(async (req, res) => {
     const courseId = newCourse._id.toString();
 
     const youtubePipeline = new YouTubePipeline(courseId, youtubeUrls);
+    console.log(youtubePipeline);
     const course = await youtubePipeline.getCaptions();
+    console.log(course);
 
     const assistant = new CourserAIAssistant(courseId);
+    console.log(assistant);
     await assistant.newCourseConfig();
 
     user.courses.push(courseId);

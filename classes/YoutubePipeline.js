@@ -54,8 +54,10 @@ class YouTubePipeline {
 		//for each caption, call the reducer
 		const text = captions.map(caption => this.reducerForStorage(caption));
 
+		const courseID = this.courseID;
+
 		//save the captions to the database
-		const transcription = new Transcription({title, text });
+		const transcription = new Transcription({title, text, courseID});
 		await transcription.save();
 		const id = transcription._id.toString();
 		return id;

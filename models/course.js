@@ -12,6 +12,7 @@ const CourseSchema = new Schema({
     transcriptions: [{ type: Schema.Types.ObjectId, ref: 'Transcription', default: [] }],
     chatEngine: Schema.Types.Mixed,
     filepath: String,
+    transcriptFiles: { type: [String], default: [] }
 });
 
 module.exports = mongoose.model('Course', CourseSchema)

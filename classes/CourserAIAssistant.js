@@ -1,5 +1,6 @@
 const Course = require('../models/course');
 const CreateFiles = require('./CreateFiles');
+const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs');
 const { Pinecone, Index, PineconeRecord, QueryResponse, ScoredPineconeRecord } = require('@pinecone-database/pinecone');
 const { Document, SummaryIndex, ServiceContext, serviceContextFromDefaults, OpenAI, BaseQueryEngine } = require("llamaindex");
@@ -16,27 +17,35 @@ class CourserAIAssistant {
     }
 
     async newCourseConfig() {
-        await this.createFiles();
+        this.transcripts = await this.createFiles();
         return;
     }
 
     async askQuestion(message, thread) {
+        console.log("Asking question: ", message);
         const msgEmbedding = await this.getEmbedding(message);
         const index = PINECONE.index(INDEX);
         const namespace = index.namespace(this.courseID); 
+        console.log("namespace: ", namespace);
         const pineconeRes = await namespace.query({topK: 3, vector: msgEmbedding});
+        console.log(pineconeRes)
         const matches = pineconeRes.matches;
+        console.log(matches)
         
         const course = await Course.findById(this.courseID);
-        const chunks = await this.getChunks(course.filepath);
+        let chunks = await this.getTranscriptionByCourseId(this.courseID);
+        chunks = chunks.text;
+        // console.log("chunks: ", chunks.length);
         const relevantChunks = [];
         const documents = [];
         for (const match of matches){
             const relevantChunk = chunks[Number(match.id)];
+            // console.log("relevant chunk: ", relevantChunk)
             relevantChunks.push(relevantChunk);
             const combinedText = relevantChunk.title + "\n" + relevantChunk.text + "\n" + relevantChunk.link;
             documents.push(new Document({ text: combinedText }));
         }
+
 
         // Specify LLM model
         const serviceContext = serviceContextFromDefaults({
@@ -80,8 +89,9 @@ class CourserAIAssistant {
     }
 
     async createFiles() {
+        console.log("creating files");
         const createFiles = new CreateFiles(this.courseID);
-        const path = await createFiles.jsonPath();
+        console.log("courseID: ", this.courseID);
         
         const index = PINECONE.index(INDEX);
         try{
@@ -90,14 +100,14 @@ class CourserAIAssistant {
 
         // add the new files to pinecone index
         const namespace = index.namespace(this.courseID); 
-        const chunks = await this.getChunks(path);
+        const chunks = await this.getTranscriptionByCourseId(this.courseID);
         for (let i = 0; i < chunks.length; i++){
             const chunkEmbedding = await this.getEmbedding(JSON.stringify(chunks[i]));
             const record = { id: String(i), values: chunkEmbedding };
             await namespace.upsert([record]);
         }
 
-        console.log("chunks uploaded: ", path);
+        // console.log("chunks uploaded: ", path);
         // Need local files for this pipeline
         // fs.unlink(path, (err) => {
         //     if (err) {
@@ -107,18 +117,32 @@ class CourserAIAssistant {
         //     }
         // });
         
-        return this.courseID;
+        return chunks;
     }
 
-    async getChunks(path) {
-        let text = "";
+    // async getChunks(path) {
+        
+    // }
+    
+
+    async getTranscriptionByCourseId(courseId) {
+        const dbName = 'test';
+        const collectionName = 'transcriptions';
+
         try {
-            text = fs.readFileSync(path, 'utf-8');
-        } catch (err) {
-            console.error('Error reading the file:', err);
+            const client = await MongoClient.connect(process.env.MONGO_URI);
+            const db = client.db(dbName);
+            const collection = db.collection(collectionName);
+
+            const transcription = await collection.findOne({ courseID:courseId });
+
+            client.close();
+
+            return transcription;
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
         }
-        const chunks = await JSON.parse(text);
-        return chunks;
     }
 
     async getEmbedding(chunk) {

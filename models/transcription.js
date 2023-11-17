@@ -10,6 +10,7 @@ const TextSchema = new Schema({
 const TranscriptionSchema = new Schema({
     title: { type: String, required: true },
     text: [{ type: TextSchema, default: [] }],
+    courseID: { type: String, required: true },
     
 });
 
