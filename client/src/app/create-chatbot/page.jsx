@@ -53,7 +53,7 @@ function CreateChatbot() {
   return (
     <div className="h-screen w-full">
       <Navbar />
-      {loading && <Loader text={'Creating you chatbot ...'} />}
+      {loading && <Loader text={'Creating your chatbot ...'} />}
       <div className="my-10 flex h-full w-full flex-col items-center justify-start gap-10">
         <div className="flex w-[80%] flex-col items-center justify-center gap-10 md:w-[50%]">
           <h1 className="text-3xl font-bold text-zinc-700">Create Chatbot</h1>

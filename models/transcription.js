@@ -11,7 +11,6 @@ const TranscriptionSchema = new Schema({
     title: { type: String, required: true },
     text: [{ type: TextSchema, default: [] }],
     courseID: { type: String, required: true },
-    
 });
 
 module.exports = mongoose.model('Transcription', TranscriptionSchema)
