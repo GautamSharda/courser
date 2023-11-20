@@ -7,7 +7,7 @@ export function Hero({ signUpButton }) {
   return (
     <Container className="text-center lg:pt-24 pt-16" style={{minHeight: '100vh'}}>
       <h1 className="mx-auto max-w-4xl font-display text-5xl font-medium tracking-tight text-slate-900 sm:text-7xl">
-        Custom chatGPT for{' '}
+        Custom ChatGPT for{' '}
         <span className="relative whitespace-nowrap text-iowaYellow">
           <svg
             aria-hidden="true"
