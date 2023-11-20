@@ -44,22 +44,12 @@ export function Header({signUpButton}) {
               />
             </Link>
             <div className="hidden md:flex md:gap-x-6">
-            <a onClick={enterpriseLetsChat}
-                className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                Get in touch
-              </a>
-              {/* <a href="https://www.patrickrfoster.com" target='_blank'     
-                className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
+              <NavLink href="/">
+                Home
+              </NavLink>
+              <NavLink href="/about">
                   About Us
-              </a>
-              <a href="https://www.linkedin.com/in/liao-zhu/" target='_blank'     
-                className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                  Contact
-              </a>
-              <a href="https://twitter.com/gautam_sharda_" target='_blank'     
-                className="inline-block rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900">
-                  Our Socials
-              </a> */}
+              </NavLink>
             </div>
           </div>
           <div className="flex items-center gap-x-5 md:gap-x-8">
