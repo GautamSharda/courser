@@ -2,7 +2,7 @@ const Course = require('../models/course');
 const CreateFiles = require('./CreateFiles');
 const fs = require('fs');
 const { Pinecone, Index, PineconeRecord, QueryResponse, ScoredPineconeRecord } = require('@pinecone-database/pinecone');
-const { Document, SummaryIndex, ServiceContext, serviceContextFromDefaults, OpenAI, BaseQueryEngine } = require("llamaindex");
+const { Document, SummaryIndex, ServiceContext, serviceContextFromDefaults, OpenAI, BaseQueryEngine, ContextChatEngine } = require("llamaindex");
 
 const INDEX = "courser";
 const PINECONE = new Pinecone({
@@ -20,7 +20,7 @@ class CourserAIAssistant {
         return;
     }
 
-    async askQuestion(message, thread) {
+    async askQuestion(message, thread_id) {
         const msgEmbedding = await this.getEmbedding(message);
         const index = PINECONE.index(INDEX);
         const namespace = index.namespace(this.courseID); 
@@ -44,16 +44,16 @@ class CourserAIAssistant {
         });
 
         // Indexing
-        const llamaIndex = await SummaryIndex.fromDocuments(documents, { serviceContext });
+        const summaryIndex = await SummaryIndex.fromDocuments(documents, { serviceContext });
         // Make query
-
-        const queryEngine = llamaIndex.asQueryEngine();
-        const llamaResponse = await queryEngine.query(
-            message
+        const retriever = summaryIndex.asRetriever();
+        const chatEngine = new ContextChatEngine({ retriever });
+        const llamaResponse = await chatEngine.chat(
+            message,
+            thread_id ? thread_id : [],
         );
-    
         const answer = llamaResponse.toString();
-        console.log(answer);
+        // console.log(answer);
 
         //For later, switch out query engine with chat engine and your our own retriever, not theirs:
         // const retriever = llamaIndex.asRetriever();
@@ -65,10 +65,15 @@ class CourserAIAssistant {
         const sources = []
         for (let i = 0; i < relevantChunks.length; i++) {
             const chunk = relevantChunks[i];
+            const timestamp = chunk.link.split("&t=")[1].split("s")[0];
+            const minutes = Math.floor(timestamp / 60);
+            const seconds = timestamp % 60;
             sources.push({
                 url: chunk.link,
                 title: chunk.title,
                 type: "YouTube",
+                seconds: seconds,
+                minutes: minutes,
                 number: i
             })
         }
@@ -76,7 +81,7 @@ class CourserAIAssistant {
         const response = answer + "\n" + JSON.stringify(sources);
         console.log(`q: ${message}`, "\n", `a: ${response}`);
 
-        return { answer: answer, sources: sources };
+        return { answer: answer, sources: sources, thread_id: chatEngine.chatHistory};
     }
 
     async createFiles() {
