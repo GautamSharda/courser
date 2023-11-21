@@ -177,6 +177,10 @@
   height: calc(100% - 64px);
 }
 
+.asdf:hover {
+  background-color: #e0e1f7;
+  cursor: disallowed;
+}
 
 
 /*---------*/
