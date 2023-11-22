@@ -29,7 +29,7 @@ export default function ModifyChatbot({ create }) {
     const Screen = screens[view];
     return (
         <div className='w-full h-full flex justify-center items-center'>
-            <div className='w-[95%] max-w-[1050px] flex flex-col justify-center items-center mt-[-140px]'>
+            <div className='w-[95%] max-w-[1050px] flex flex-col justify-start items-center h-full mt-40'>
                 <div className='flex flex-col justify-center items-center mb-12'>
                     <h2 className='text-3xl font-bold'>{text.title}</h2>
                     <p>{text.subtitle}</p>

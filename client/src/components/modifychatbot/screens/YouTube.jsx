@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import Sources from "../components/Sources.jsx"
 
 
 function YouTube() {
@@ -11,6 +10,7 @@ function YouTube() {
         const updatedSources = sources.filter((_, i) => i !== index);
         setSources(updatedSources);
     }
+
     const handleAddSource = () => {
         const updatedSources = [...sources];
         updatedSources.push({ id: sources.length + 1, url: currentSource });
@@ -23,7 +23,7 @@ function YouTube() {
     <div className='flex w-full h-full flex-col items-start justify-start'> 
         <div className="flex w-full flex-col items-center justify-center gap-2">
             <label className="text-md w-full text-left font-bold text-zinc-600 md:text-lg">
-            2. Add your sources (YouTube videos) to your chatbot
+            Add Youtube videos to your chatbot
             </label>
             <input
                 type="text"
@@ -44,33 +44,7 @@ function YouTube() {
             Add URL
             </button>
         </div>
-        <div className="mt-auto flex w-full flex-col items-start justify-center">
-            <p className="text-lg font-bold text-zinc-600">
-            Your sources:{' '}
-            {sources.filter((source) => source.url.trim() !== '').length}
-            </p>
-            <div className="flex w-full flex-col items-start justify-center gap-2">
-            {sources.length == 0 && (
-                <p className="text-sm text-zinc-400">
-                You have not added any sources yet. Start by adding one up above!
-                </p>
-            )}
-
-            {sources.map((source, index) => (
-                <div
-                key={source.id}
-                className="flex w-full items-center justify-start gap-2 p-2 ring-1 ring-inset ring-zinc-600 text-zinc-600 text-sm rounded-md"
-                >
-                <p>{source.url}</p>
-                <FontAwesomeIcon
-                    icon={faTrash}
-                    className="ml-auto cursor-pointer text-red-700 hover:text-red-600"
-                    onClick={() => handleDeleteSource(index)}
-                />
-                </div>
-            ))}
-            </div>
-        </div>
+        <Sources sources={sources} handleDeleteSource={handleDeleteSource}/>
     </div>
 )}
 
