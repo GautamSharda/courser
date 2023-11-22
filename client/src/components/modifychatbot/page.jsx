@@ -26,10 +26,16 @@ const screens = {
 export default function ModifyChatbot({ create }) {
     const [view, setView] = useState('youtube');
     const text = create ? createText : modifyText;
+    const [sources, setSources] = useState({
+        'youtube': [],
+        'PDF': [],
+        'PPTX': [],
+    })
+
     const Screen = screens[view];
     return (
         <div className='w-full h-full flex justify-center items-center'>
-            <div className='w-[95%] max-w-[1050px] flex flex-col justify-start items-center h-full mt-40'>
+            <div className='w-[95%] max-w-[1050px] flex flex-col justify-start items-center h-full'>
                 <div className='flex flex-col justify-center items-center mb-12'>
                     <h2 className='text-3xl font-bold'>{text.title}</h2>
                     <p>{text.subtitle}</p>
@@ -39,7 +45,7 @@ export default function ModifyChatbot({ create }) {
                         <SelectType view={view} setView={setView} />
                     </div>
                     <div className='w-[50%]'>
-                        <Screen />
+                        <Screen sources={sources} setSources={setSources}/>
                     </div>
                     <div className='w-[25%]'>
                         <Save />

@@ -1,20 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Sources from "../components/Sources.jsx"
 
 
-function YouTube() {
-    const [sources, setSources] = useState([]);
+function YouTube({sources, setSources}) {
     const [currentSource, setCurrentSource] = useState('');
 
     const handleDeleteSource = (index) => {
-        const updatedSources = sources.filter((_, i) => i !== index);
-        setSources(updatedSources);
+        const updatedSources = sources.youtube.filter((_, i) => i !== index);
+        setSources((prevSources) => ({
+          ...prevSources,
+          youtube: updatedSources,
+        }))
     }
 
     const handleAddSource = () => {
-        const updatedSources = [...sources];
-        updatedSources.push({ id: sources.length + 1, url: currentSource });
-        setSources(updatedSources);
+        const updatedSources = [...sources.youtube];
+        updatedSources.push({ id: sources.youtube.length + 1, url: currentSource });
+        setSources((prevSources) => ({ ...prevSources, youtube: updatedSources }));
         // clear the input
         setCurrentSource('');
     }
@@ -44,7 +46,7 @@ function YouTube() {
             Add URL
             </button>
         </div>
-        <Sources sources={sources} handleDeleteSource={handleDeleteSource}/>
+        <Sources sources={sources.youtube} handleDeleteSource={handleDeleteSource}/>
     </div>
 )}
 
