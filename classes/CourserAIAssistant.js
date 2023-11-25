@@ -1,5 +1,6 @@
 const Course = require('../models/course');
-const CreateFiles = require('./CreateFiles');
+const Source = require("../models/source");
+const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs');
 const { Pinecone, Index, PineconeRecord, QueryResponse, ScoredPineconeRecord } = require('@pinecone-database/pinecone');
 const { Document, SummaryIndex, ServiceContext, serviceContextFromDefaults, OpenAI, BaseQueryEngine, ContextChatEngine } = require("llamaindex");
@@ -16,19 +17,19 @@ class CourserAIAssistant {
     }
 
     async newCourseConfig() {
-        await this.createFiles();
+        this.transcripts = await this.createFiles();
         return;
     }
 
+    // TODO: add title 
     async askQuestion(message, thread_id) {
         const msgEmbedding = await this.getEmbedding(message);
         const index = PINECONE.index(INDEX);
         const namespace = index.namespace(this.courseID); 
         const pineconeRes = await namespace.query({topK: 3, vector: msgEmbedding});
         const matches = pineconeRes.matches;
-        
-        const course = await Course.findById(this.courseID);
-        const chunks = await this.getChunks(course.filepath);
+
+        const chunks = await this.getChunks();
         const relevantChunks = [];
         const documents = [];
         for (const match of matches){
@@ -53,41 +54,29 @@ class CourserAIAssistant {
             thread_id ? thread_id : [],
         );
         const answer = llamaResponse.toString();
-        // console.log(answer);
 
-        //For later, switch out query engine with chat engine and your our own retriever, not theirs:
-        // const retriever = llamaIndex.asRetriever();
-        // const chatEngine = new ContextChatEngine({ retriever });
-
-        // start chatting
-        // const llamaResponse = await chatEngine.chat(message);
-
-        const sources = []
+        const citations = []
         for (let i = 0; i < relevantChunks.length; i++) {
             const chunk = relevantChunks[i];
+            const source = await Source.findById(chunk.sourceId);
             const timestamp = chunk.link.split("&t=")[1].split("s")[0];
-            const minutes = Math.floor(timestamp / 60);
-            const seconds = timestamp % 60;
-            sources.push({
+            citations.push({
                 url: chunk.link,
-                title: chunk.title,
-                type: "YouTube",
-                seconds: seconds,
-                minutes: minutes,
+                title: source.name,
+                type: source.type,
+                seconds: timestamp % 60,
+                minutes: Math.floor(timestamp / 60),
                 number: i
             })
         }
 
-        const response = answer + "\n" + JSON.stringify(sources);
+        const response = answer + "\n" + JSON.stringify(citations);
         console.log(`q: ${message}`, "\n", `a: ${response}`);
 
-        return { answer: answer, sources: sources, thread_id: chatEngine.chatHistory};
+        return { answer: answer, sources: citations, thread_id: chatEngine.chatHistory}; // eventually want to use citations: citations, instead of sources: citations
     }
 
-    async createFiles() {
-        const createFiles = new CreateFiles(this.courseID);
-        const path = await createFiles.jsonPath();
-        
+    async createFiles() {        
         const index = PINECONE.index(INDEX);
         try{
             index.delete(delete_all=true, namespace=this.courseID); // delete all existing files for this course from vectorDB
@@ -95,14 +84,16 @@ class CourserAIAssistant {
 
         // add the new files to pinecone index
         const namespace = index.namespace(this.courseID); 
-        const chunks = await this.getChunks(path);
+        let chunks = await this.getChunks();
+        console.log(chunks);
+
         for (let i = 0; i < chunks.length; i++){
             const chunkEmbedding = await this.getEmbedding(JSON.stringify(chunks[i]));
             const record = { id: String(i), values: chunkEmbedding };
             await namespace.upsert([record]);
         }
 
-        console.log("chunks uploaded: ", path);
+        // console.log("chunks uploaded: ", path);
         // Need local files for this pipeline
         // fs.unlink(path, (err) => {
         //     if (err) {
@@ -111,19 +102,19 @@ class CourserAIAssistant {
         //         console.log("Local file deleted successfully");
         //     }
         // });
-        
-        return this.courseID;
-    }
-
-    async getChunks(path) {
-        let text = "";
-        try {
-            text = fs.readFileSync(path, 'utf-8');
-        } catch (err) {
-            console.error('Error reading the file:', err);
-        }
-        const chunks = await JSON.parse(text);
         return chunks;
+    }
+    
+    async getChunks() {
+        const course = await Course.findById(this.courseID);
+        const sourceIds = course.sourceFiles;
+        // Create an array of promises for each source
+        const sourcePromises = sourceIds.map(sourceId => Source.findById(sourceId));
+        // Await all promises simultaneously for efficiency
+        const sources = await Promise.all(sourcePromises);
+        // Use flatMap to concatenate all chunks into a single array
+        const allChunks = sources.flatMap(source => source.chunks || []);
+        return allChunks;
     }
 
     async getEmbedding(chunk) {

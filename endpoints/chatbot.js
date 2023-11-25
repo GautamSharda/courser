@@ -11,7 +11,7 @@ const OpenAIAssistant = require("../classes/OpenAIAssistant");
 const CourserAIAssistant = require("../classes/CourserAIAssistant");
 
 //create a get route that has query params for the course id and thread_id (optional) and then in the body of the request, the query
-Chatbot.post('/ask', asyncMiddleware(async (req, res) => {
+Chatbot.post('/chat', asyncMiddleware(async (req, res) => {
     const { courseID, thread_id, query } = req.body;
     // res.json({ answer: "hello", thread_id: 'thread-id123' });
     // return 
@@ -30,7 +30,7 @@ Chatbot.post('/create', isLoggedIn, asyncMiddleware(async (req, res) => {
     const courseId = newCourse._id.toString();
 
     const youtubePipeline = new YouTubePipeline(courseId, youtubeUrls);
-    const course = await youtubePipeline.getCaptions();
+    const course = await youtubePipeline.getCaptions(); // This code smells. A function called getCaptions() should return Captions. Instead, it's returning a Course, which is surely not appropriately used.
 
     const assistant = new CourserAIAssistant(courseId);
     await assistant.newCourseConfig();
