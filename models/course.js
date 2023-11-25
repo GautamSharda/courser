@@ -10,9 +10,9 @@ const CourseSchema = new Schema({
     backgroundImg: { type: String, default: 'https://res.cloudinary.com/dlk3ezbal/image/upload/v1699589098/jqmlca7vhr0cnzgdbaah.png' },
     openAIFiles: { type: [String], default: [] },
     transcriptions: [{ type: Schema.Types.ObjectId, ref: 'Transcription', default: [] }],
-    chatEngine: Schema.Types.Mixed,
+    chatHistory: Schema.Types.Mixed,
     filepath: String,
-    transcriptFiles: { type: [String], default: [] }
+    sourceFiles: { type: [String], default: [] }
 });
 
 module.exports = mongoose.model('Course', CourseSchema)

@@ -1,9 +1,10 @@
 const Course = require('../models/course');
-const Transcription = require('../models/transcription');
+const Source = require("../models/source");
 const { MongoClient } = require('mongodb');
 const fs = require('fs');
 require("dotenv").config();
 
+// only used in OAI Assistant
 
 class CreateFiles {
     constructor(courseID) {

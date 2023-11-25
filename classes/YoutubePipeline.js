@@ -1,49 +1,46 @@
 var getSubtitles = require('youtube-captions-scraper').getSubtitles;
 const YTMetadata = require('youtube-metadata-from-url');
-const Transcription = require("../models/transcription");
+const Source = require("../models/source");
 const Course = require("../models/course");
 // const link = "https://www.youtube.com/watch?v=fDAPJ7rvcUw";
 //https://www.youtube.com/watch?v=NJSO52hGZGs
 // let videoID = link.split("v=")[1];
+const TYPE = "YouTube";
 
 class YouTubePipeline {
 	constructor(courseID, links) {
 		this.courseID = courseID;
-		this.links = typeof links === 'string' ? [links] : links;
-		this.links = this.linkReducer([...this.links]);
+		this.links = links.map(link => this.reduce(link));
 	}
 
-	linkReducer(links) {
-		const goodLinks = [];
-		for (let link of links) {
-			const parsedUrl = new URL(link);
-			// Extract the 'v' query parameter
-			const videoId = parsedUrl.searchParams.get('v');
-			// Construct the clean URL with only the 'v' parameter
-			const cleanUrl = new URL(parsedUrl.origin + parsedUrl.pathname);
-			if (videoId) {
-			  cleanUrl.searchParams.set('v', videoId);
-			}
-			const completedUrl = cleanUrl.toString();
-			goodLinks.push(completedUrl);
+	reduce(link) {
+		const parsedUrl = new URL(link);
+		// Extract the 'v' query parameter
+		const videoId = parsedUrl.searchParams.get('v');
+		// Construct the clean URL with only the 'v' parameter
+		const cleanUrl = new URL(parsedUrl.origin + parsedUrl.pathname);
+		if (videoId) {
+			cleanUrl.searchParams.set('v', videoId);
 		}
-		return goodLinks;
+		const completedUrl = cleanUrl.toString();
+		return completedUrl;
 	}
 
 	async getCaptions() {
-		const videoIDs = this.links.map(link => this.getVideoID(link));
+		const videoIds = this.links.map(link => this.getVideoID(link));
 		const ids = [];
 		//loop through video ids
-		for (let videoID of videoIDs) {
+		for (let videoID of videoIds) {
+			console.log("videoID: ", videoID);
 			//get the video metadata
 			try {
 				const id = await this.createTranscription(videoID);
 				ids.push(id);
-			} catch {}
+			} catch(e) {}
 		}
 		//push the ids to the course's transciprtion array
 		const course = await Course.findById(this.courseID);
-		ids.forEach(id => course.transcriptions.push(id));
+		ids.forEach(id => course.sourceFiles.push(id));
 		await course.save();
 		return course;
 	}
@@ -51,15 +48,21 @@ class YouTubePipeline {
 	async createTranscription(videoID) {
 		const captions = await this.getVideoMetadata(videoID);
 		const title = captions[0].title;
-		//for each caption, call the reducer
-		const text = captions.map(caption => this.reducerForStorage(caption));
 
-		const courseID = this.courseID;
-
-		//save the captions to the database
-		const transcription = new Transcription({title, text, courseID});
-		await transcription.save();
+		//create new Source in the database
+		const transcription = new Source({name: title, type: TYPE, courseId: this.courseID});
 		const id = transcription._id.toString();
+
+		//for each caption, call the reducer
+		const chunks = captions.map(caption => this.getChunkFromCaption(caption, id));
+		transcription.chunks = chunks;
+
+		try{
+			await transcription.save();
+		}catch(e){
+			console.log("transcription save error: ", e);
+		}
+
 		return id;
 	}
  
@@ -69,9 +72,9 @@ class YouTubePipeline {
 		return `&t=${seconds}s`
 	}
 
-	reducerForStorage(transcription) {
+	getChunkFromCaption(transcription, id) {
 		const {link, start, text } = transcription;
-		return {text, link: `${link}${this.secondsToTimeStamp(start)}`};
+		return {text, link: `${link}${this.secondsToTimeStamp(start)}`, sourceId: id};
 	}
 
 	//internal method to get the videoID from the link

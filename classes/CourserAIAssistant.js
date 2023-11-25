@@ -1,5 +1,5 @@
 const Course = require('../models/course');
-const CreateFiles = require('./CreateFiles');
+const Source = require("../models/source");
 const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs');
 const { Pinecone, Index, PineconeRecord, QueryResponse, ScoredPineconeRecord } = require('@pinecone-database/pinecone');
@@ -24,29 +24,20 @@ class CourserAIAssistant {
     // TODO: add title 
     async askQuestion(message, thread_id) {
         const msgEmbedding = await this.getEmbedding(message);
-        console.log("msgEmbedding: ", msgEmbedding);
         const index = PINECONE.index(INDEX);
         const namespace = index.namespace(this.courseID); 
-        console.log("namespace: ", namespace);
         const pineconeRes = await namespace.query({topK: 3, vector: msgEmbedding});
-        console.log(pineconeRes)
         const matches = pineconeRes.matches;
-        console.log(matches)
-        
-        const course = await Course.findById(this.courseID);
-        let chunks = await this.getTranscriptionByCourseId(this.courseID);
-        chunks = chunks.text;
-        // console.log("chunks: ", chunks.length);
+
+        const chunks = await this.getChunks();
         const relevantChunks = [];
         const documents = [];
         for (const match of matches){
             const relevantChunk = chunks[Number(match.id)];
-            // console.log("relevant chunk: ", relevantChunk)
             relevantChunks.push(relevantChunk);
             const combinedText = relevantChunk.title + "\n" + relevantChunk.text + "\n" + relevantChunk.link;
             documents.push(new Document({ text: combinedText }));
         }
-
 
         // Specify LLM model
         const serviceContext = serviceContextFromDefaults({
@@ -63,42 +54,29 @@ class CourserAIAssistant {
             thread_id ? thread_id : [],
         );
         const answer = llamaResponse.toString();
-        // console.log(answer);
 
-        //For later, switch out query engine with chat engine and your our own retriever, not theirs:
-        // const retriever = llamaIndex.asRetriever();
-        // const chatEngine = new ContextChatEngine({ retriever });
-
-        // start chatting
-        // const llamaResponse = await chatEngine.chat(message);
-
-        const sources = []
+        const citations = []
         for (let i = 0; i < relevantChunks.length; i++) {
             const chunk = relevantChunks[i];
+            const source = await Source.findById(chunk.sourceId);
             const timestamp = chunk.link.split("&t=")[1].split("s")[0];
-            const minutes = Math.floor(timestamp / 60);
-            const seconds = timestamp % 60;
-            sources.push({
+            citations.push({
                 url: chunk.link,
-                title: chunk.title,
-                type: "YouTube",
-                seconds: seconds,
-                minutes: minutes,
+                title: source.name,
+                type: source.type,
+                seconds: timestamp % 60,
+                minutes: Math.floor(timestamp / 60),
                 number: i
             })
         }
 
-        const response = answer + "\n" + JSON.stringify(sources);
+        const response = answer + "\n" + JSON.stringify(citations);
         console.log(`q: ${message}`, "\n", `a: ${response}`);
 
-        return { answer: answer, sources: sources, thread_id: chatEngine.chatHistory};
+        return { answer: answer, sources: citations, thread_id: chatEngine.chatHistory}; // eventually want to use citations: citations, instead of sources: citations
     }
 
-    async createFiles() {
-        console.log("creating files");
-        const createFiles = new CreateFiles(this.courseID);
-        console.log("courseID: ", this.courseID);
-        
+    async createFiles() {        
         const index = PINECONE.index(INDEX);
         try{
             index.delete(delete_all=true, namespace=this.courseID); // delete all existing files for this course from vectorDB
@@ -106,9 +84,9 @@ class CourserAIAssistant {
 
         // add the new files to pinecone index
         const namespace = index.namespace(this.courseID); 
-        let chunks = await this.getTranscriptionByCourseId(this.courseID);
-        console.log("chunks: ", chunks);
-        chunks = chunks.text;
+        let chunks = await this.getChunks();
+        console.log(chunks);
+
         for (let i = 0; i < chunks.length; i++){
             const chunkEmbedding = await this.getEmbedding(JSON.stringify(chunks[i]));
             const record = { id: String(i), values: chunkEmbedding };
@@ -124,28 +102,19 @@ class CourserAIAssistant {
         //         console.log("Local file deleted successfully");
         //     }
         // });
-        
         return chunks;
     }
     
-    async getTranscriptionByCourseId(courseId) {
-        const dbName = 'test';
-        const collectionName = 'transcriptions';
-
-        try {
-            const client = await MongoClient.connect(process.env.MONGO_URI);
-            const db = client.db(dbName);
-            const collection = db.collection(collectionName);
-
-            const transcription = await collection.findOne({ courseID:courseId });
-
-            client.close();
-
-            return transcription;
-        } catch (error) {
-            console.error('Error:', error);
-            throw error;
-        }
+    async getChunks() {
+        const course = await Course.findById(this.courseID);
+        const sourceIds = course.sourceFiles;
+        // Create an array of promises for each source
+        const sourcePromises = sourceIds.map(sourceId => Source.findById(sourceId));
+        // Await all promises simultaneously for efficiency
+        const sources = await Promise.all(sourcePromises);
+        // Use flatMap to concatenate all chunks into a single array
+        const allChunks = sources.flatMap(source => source.chunks || []);
+        return allChunks;
     }
 
     async getEmbedding(chunk) {

@@ -23,7 +23,7 @@ export default function Chatbot({ id, color, image }) {
     setMessages((prevMessages) => [...prevMessages, newUserMessage])
     //    const { courseID, thread_id, query } = req.body;
     setLoading(true)
-    const response = await fetch(`${constants.url}/chatbot/ask`, {
+    const response = await fetch(`${constants.url}/chatbot/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
