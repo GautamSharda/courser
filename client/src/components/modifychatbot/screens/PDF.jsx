@@ -13,17 +13,19 @@ export default function PDF({sources, setSources}) {
         }))
     }
 
-    const handleFileUpload = (e) => {
-        const file = e.target.files[0];
+    const handleFileUpload = (files) => {
+      const updatedSources = [...sources.PDF];
+      for (let file of files) {
         const fileType = file.name.split(".")[1];
         // file.id = uuid(); if we wanted to have unique ids for mapping
-        const updatedSources = [...sources.PDF, file];
         if (fileType === 'pdf') {
-          setSources((prevSources) => ({
-            ...prevSources,
-            PDF: updatedSources,
-          }))
+          updatedSources.push(file);
         }
+        setSources((prevSources) => ({
+          ...prevSources,
+          PDF: updatedSources,
+        }));
+      }
     }
 
     return (

@@ -11,7 +11,13 @@ export default function FileUpload({ text, type, Icon, handleFileUpload }) {
         >
           {text} Files
         </label>
-        <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10">
+        <div className="mt-2 flex justify-center rounded-lg border border-dashed border-gray-900/25 px-6 py-10"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleFileUpload(e.dataTransfer.files);
+          }}
+        >
           <div className="text-center">
             <Icon
               className="mx-auto h-12 w-12 text-gray-300"
@@ -27,8 +33,10 @@ export default function FileUpload({ text, type, Icon, handleFileUpload }) {
                   id="file-upload"
                   name="file-upload"
                   type="file"
+                  accept={`.${type}`}
                   className="sr-only"
-                  onChange={handleFileUpload}
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                  multiple
                 />
               </label>
               <p className="pl-1">or drag and drop</p>

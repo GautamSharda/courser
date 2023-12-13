@@ -32,7 +32,7 @@ if (process.env.NODE_ENV !== "production") {
   app.use(fileUpload());
   app.use(bodyParser.json(), bodyParser.urlencoded({ extended: false }));
   app.use(cookieParser());
-  app.use(cors({credentials: true, origin: ["http://localhost:3000", "https://courser-beta.vercel.app", "https://chatcourser.com"]}));
+  app.use(cors({credentials: true, origin: ["http://localhost:3000"]}));
   app.use("/auth", Auth);
   app.use("/chatbot", Chatbot);
   app.use("/course", CourseRouter);
