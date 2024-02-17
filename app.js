@@ -26,7 +26,7 @@ db.on("error", (message) => {
   console.error("Error connecting to database");
 });
 db.once("open", () => {
-  console.log("👉 👌 Database did the deed");
+  console.log("✅ Database is connected");
 });
 
 app.use(fileUpload());
@@ -48,7 +48,7 @@ if (PORT == null || PORT == "") {
 }
 
 app.listen(PORT, () => {
-  console.log(`🚀 Running this bitch on ${PORT}`)
+  console.log(`🚀 Running the server on ${PORT}`)
 });
 
   
