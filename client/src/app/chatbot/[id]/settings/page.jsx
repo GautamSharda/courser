@@ -11,6 +11,7 @@ import { ChromePicker } from 'react-color';
 export default function Settings ({ params }) {
     const [loading, setLoading] = useState('Loading ...');
     const [name, setName] = useState('');
+    const [openAIKey, setOpenAIKey] = useState('');
     const [placeholder, setPlaceholder] = useState('');
     const [color, setColor] = useState('#FFEC52')
     const [initialState, setInitialState] = useState({});//{name: '', placeholder: '', color: '', prompt: '', imgUrl: ''}
@@ -22,13 +23,14 @@ export default function Settings ({ params }) {
 
     const getData = async () => {
         const course = await isLoggedIn(constants.clientUrl, `course/getCourseProtected/${courseID}`);
-        const {color, backgroundImg, name, instructions, placeholder } = course;
+        const {color, backgroundImg, name, instructions, placeholder, openAIKey } = course;
         setName(name || '');
         setPlaceholder(placeholder || '');
         setColor(color || '#FFEC52')
         setPrompt(instructions || '');
         setImgUrl(backgroundImg || constants.courserLogoLarge);
-        setInitialState({name, placeholder, color, instructions, backgroundImg});
+        setOpenAIKey(openAIKey || '');
+        setInitialState({name, placeholder, color, instructions, backgroundImg, openAIKey: openAIKey || ""});
 
         setLoading('');
     }
@@ -41,6 +43,7 @@ export default function Settings ({ params }) {
         formData.append('color', color);
         formData.append('instructions', prompt);
         formData.append('image', imageFile);
+        formData.append('openAIKey', openAIKey);
         // formData.append('courseID', courseID);
         setLoading('Saving ...');
         const response = await fetch(`${constants.url}/course/update`, {
@@ -61,7 +64,7 @@ export default function Settings ({ params }) {
       }, []);
 
     const hasDataChanged = () => {
-        return name !== initialState.name || placeholder !== initialState.placeholder || color !== initialState.color || prompt !== initialState.instructions || (imgUrl !== initialState.backgroundImg && imgUrl !== constants.courserLogoLarge);
+        return name !== initialState.name || placeholder !== initialState.placeholder || color !== initialState.color || prompt !== initialState.instructions || (imgUrl !== initialState.backgroundImg && imgUrl !== constants.courserLogoLarge) || openAIKey !== initialState.openAIKey;
     }
     const canUpdate = hasDataChanged();
     
@@ -84,19 +87,35 @@ export default function Settings ({ params }) {
                     <p className="text-2xl font-bold mr-4">Settings</p>
                 </div>
                 <div className="h-full w-full mt-4">
-                    <div className="flex w-full flex-col items-start justify-start gap-2">
-                        <label className="text-md w-full text-left font-bold text-zinc-600 md:text-lg">
-                        Chatbot Name
-                        </label>
-                        <input
-                        type="text"
-                        name="website"
-                        className="w-full flex-auto rounded-md border-0 max-w-[275px] px-3 py-1.5 text-zinc-600 ring-1 ring-inset ring-zinc-400 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-yellow-500 sm:text-sm sm:leading-6"
-                        placeholder="Chatbot Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        />
+                    <div className="w-full flex items-start justify-start">
+                        <div className="flex w-full flex-col items-start justify-start gap-2">
+                            <label className="text-md text-left font-bold text-zinc-600 md:text-lg">
+                                Chatbot Name
+                            </label>
+                            <input
+                                type="text"
+                                name="website"
+                                className="w-full flex-auto rounded-md border-0 max-w-[275px] px-3 py-1.5 text-zinc-600 ring-1 ring-inset ring-zinc-400 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-yellow-500 sm:text-sm sm:leading-6"
+                                placeholder="Chatbot Name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex w-full flex-col items-start justify-start gap-2">
+                            <label className="text-md w-full text-left font-bold text-zinc-600 md:text-lg">
+                                OpenAI Key (optional)
+                            </label>
+                            <input
+                                type="text"
+                                name="website"
+                                className="w-full flex-auto rounded-md border-0 max-w-[275px] px-3 py-1.5 text-zinc-600 ring-1 ring-inset ring-zinc-400 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-yellow-500 sm:text-sm sm:leading-6"
+                                placeholder="sk-mxNMKsnphlbkFLm5IqPaBa8cU8"
+                                value={openAIKey}
+                                onChange={(e) => setOpenAIKey(e.target.value)}
+                            />
+                        </div>
                     </div>
+
                     <div className="flex w-full flex-col items-start justify-start gap-2  mt-8">
                         <label className="text-md w-full text-left font-bold text-zinc-600 md:text-lg">
                         Question Placeholder

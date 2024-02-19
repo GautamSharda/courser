@@ -12,7 +12,8 @@ const CourseSchema = new Schema({
     transcriptions: [{ type: Schema.Types.ObjectId, ref: 'Transcription', default: [] }],
     chatHistory: Schema.Types.Mixed,
     filepath: String,
-    sourceFiles: { type: [String], default: [] }
+    openAIKey: {type: String, default: ''},
+    sourceFiles: { type: [String], default: [] },
 });
 
 module.exports = mongoose.model('Course', CourseSchema)
