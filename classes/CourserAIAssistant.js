@@ -12,8 +12,9 @@ const PINECONE = new Pinecone({
 });
 
 class CourserAIAssistant {
-    constructor(courseID) {
+    constructor(courseID, openAIKey) {
         this.courseID = courseID;
+        this.openAIKey = openAIKey;
     }
 
     async newCourseConfig() {
@@ -41,7 +42,7 @@ class CourserAIAssistant {
 
         // Specify LLM model
         const serviceContext = serviceContextFromDefaults({
-            llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0 }),
+            llm: new OpenAI({ model: "gpt-3.5-turbo-16k", temperature: 0, apiKey: this.openAIKey }),
         });
 
         // Indexing
@@ -130,7 +131,7 @@ class CourserAIAssistant {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Authorization': `Bearer ${this.openAIKey}`,
                 },
                 body: JSON.stringify(data),
             });

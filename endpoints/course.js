@@ -6,7 +6,6 @@ const { isLoggedIn, asyncMiddleware } = require("../middleware");
 const CourseRouter = express.Router();
 const Course = require("../models/course");
 const cloudinary = require('cloudinary').v2;
-const fs = require('fs').promises;
 
 
 CourseRouter.get('/getAllCourses', isLoggedIn, asyncMiddleware(async (req, res) => {
@@ -23,8 +22,8 @@ CourseRouter.get('/getCourse/:courseID', asyncMiddleware(async (req, res) => {
 }));
 
 CourseRouter.post('/update',isLoggedIn, asyncMiddleware(async (req, res) => {
-    const { courseID, name, placeholder, color, instructions } = req.body;
-    const data = { name, placeholder, color, instructions };
+    const { courseID, name, placeholder, color, instructions, openAIKey } = req.body;
+    const data = { name, placeholder, color, instructions, openAIKey };
 
     // Check if an image file is included in the request
     const image = req?.files?.image;
