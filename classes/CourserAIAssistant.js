@@ -7,7 +7,6 @@ const { Document, SummaryIndex, ServiceContext, serviceContextFromDefaults, Open
 
 const INDEX = "courser";
 const PINECONE = new Pinecone({
-    environment: process.env.PINECONE_ENVIRONMENT,
     apiKey: process.env.PINECONE_API_KEY
 });
 
