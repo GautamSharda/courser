@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation'
 // ]
 const navSections = [
   {name: 'Chatbot', pathEnding: 'chat'},
+  {name: 'Datasets', pathEnding: 'datasets'},
   {name: 'Embed Website', pathEnding: 'embed'},
   {name: 'Settings', pathEnding: 'settings'}
 ]
